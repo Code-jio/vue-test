@@ -39,6 +39,9 @@ export function useEngine() {
             pluginClass: EngineKernel.BaseScene,
             userData: {
               // 让Three.js自动创建canvas并添加到document.body
+              rendererConfig: {
+                container: document.getElementById("canvas-container"),
+              }
             },
           },
         ],

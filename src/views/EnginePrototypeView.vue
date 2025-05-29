@@ -1,5 +1,6 @@
 <template>
   <div class="engine-prototype-container">
+    <div class="canvas-container" id="canvas-container"></div>
     <!-- 控制面板 -->
     <div class="control-panel">
       <div class="panel-section">
@@ -24,35 +25,6 @@
           <button @click="handleReinitControls" :disabled="!engineReady">🔄 重新初始化</button>
           <button @click="handleDiagnoseControls" :disabled="!engineReady">🩺 全面诊断</button>
           <button @click="handleCheckCanvas" :disabled="!engineReady">🖼️ 检查Canvas</button>
-        </div>
-      </div>
-
-      <!-- 新增CSS3D控制部分 -->
-      <div class="panel-section">
-        <h3>🌐 CSS3D测试</h3>
-        <button @click="handleCreateVueCard" :disabled="!css3dReady">创建Vue卡片</button>
-        <button @click="handleCreateVueForm" :disabled="!css3dReady">创建表单</button>
-        <button @click="handleCreateVueChart" :disabled="!css3dReady">创建图表</button>
-        <button @click="handleCreate3DControls" :disabled="!css3dReady">创建控制面板</button>
-        <button @click="handleCreateVueMedia" :disabled="!css3dReady">创建媒体播放器</button>
-        <div class="css3d-actions">
-          <button @click="handleAnimate3DObjects" :disabled="!css3dReady || css3dObjects.length === 0">
-            动画演示
-          </button>
-          <button @click="handleClear3DObjects" :disabled="!css3dReady || css3dObjects.length === 0">
-            清空所有
-          </button>
-        </div>
-        <div class="css3d-interaction">
-          <button @click="handleTriggerChartUpdate" :disabled="!css3dReady">更新图表数据</button>
-          <button @click="handleUpdateControlsTime" :disabled="!css3dReady">刷新时间</button>
-          <button @click="handlePlayMediaVideo" :disabled="!css3dReady">切换播放</button>
-        </div>
-        <div class="css3d-debug">
-          <button @click="handleDebugCSS3DObjects" :disabled="!css3dReady">🔍 调试CSS3D</button>
-        </div>
-        <div class="css3d-status">
-          <span class="status-item">3D对象数量: {{ css3dObjects.length }}</span>
         </div>
       </div>
 
@@ -84,7 +56,6 @@
           <div class="help-item">• 右键拖拽：平移视角</div>
           <div class="help-item">• 滚轮：缩放视角</div>
           <div class="help-item">• R键：重置相机位置</div>
-          <div class="help-item">• CSS3D：测试HTML转3D功能</div>
         </div>
       </div>
     </div>
@@ -94,7 +65,6 @@
 <script setup>
 import { onMounted, onUnmounted } from "vue";
 import { useEngine } from '@/composables/useEngine'
-import { useCSS3D } from '@/composables/useCSS3D'
 import { useDebug } from '@/composables/useDebug'
 import { usePerformance } from '@/composables/usePerformance'
 import { useControls } from '@/composables/useControls'
@@ -113,24 +83,6 @@ const {
   getBaseScenePlugin,
   getOrbitControlPlugin
 } = useEngine()
-
-const {
-  css3dReady,
-  css3dObjects,
-  initCSS3DPlugin,
-  createVueCard,
-  createVueForm,
-  createVueChart,
-  create3DControls,
-  createVueMedia,
-  animate3DObjects,
-  triggerChartUpdate,
-  updateControlsTime,
-  playMediaVideo,
-  clear3DObjects,
-  enhancedRenderLoop,
-  debugCSS3DObjects
-} = useCSS3D()
 
 const {
   debugLogs,
@@ -164,21 +116,9 @@ const initializeApplication = async () => {
     // 1. 初始化引擎核心
     await initializeEngine(addDebugLog)
     
-    // 2. 初始化CSS3D插件
-    const engineInstance = getEngineInstance()
-    const baseScenePlugin = getBaseScenePlugin()
-    
-    if (engineInstance && baseScenePlugin) {
-      await initCSS3DPlugin(engineInstance, baseScenePlugin, addDebugLog)
-    }
-    
-    // 3. 设置性能监控
-    setupCameraMonitoring(getOrbitControlPlugin(), baseScenePlugin, addDebugLog)
+    // 2. 设置性能监控
+    setupCameraMonitoring(getOrbitControlPlugin(), getBaseScenePlugin(), addDebugLog)
     startFpsMonitoring(engineReady)
-    
-    // 4. 启动CSS3D渲染循环
-    enhancedRenderLoop(baseScenePlugin)
-    addDebugLog("success", "🌐 CSS3D渲染循环启动完成")
     
     // 5. 设置控制系统
     keyboardCleanup = setupAdaptiveControls(engineReady, () => resetCamera(addDebugLog), addDebugLog)
@@ -239,20 +179,6 @@ const handleCheckCanvas = () => {
   }
 }
 
-// CSS3D相关处理函数
-const handleCreateVueCard = () => createVueCard(addDebugLog)
-const handleCreateVueForm = () => createVueForm(addDebugLog)
-const handleCreateVueChart = () => createVueChart(addDebugLog)
-const handleCreate3DControls = () => create3DControls(addDebugLog)
-const handleCreateVueMedia = () => createVueMedia(addDebugLog)
-
-const handleAnimate3DObjects = () => animate3DObjects(addDebugLog)
-const handleTriggerChartUpdate = () => triggerChartUpdate(addDebugLog)
-const handleUpdateControlsTime = () => updateControlsTime(addDebugLog)
-const handlePlayMediaVideo = () => playMediaVideo(addDebugLog)
-const handleClear3DObjects = () => clear3DObjects(addDebugLog)
-const handleDebugCSS3DObjects = () => debugCSS3DObjects(getBaseScenePlugin(), addDebugLog)
-
 // 组件挂载
 onMounted(() => {
   initializeApplication()
@@ -266,11 +192,6 @@ onUnmounted(() => {
   // 清理键盘监听器
   if (keyboardCleanup) {
     keyboardCleanup()
-  }
-
-  // 清理所有CSS3D对象
-  if (css3dObjects.value.length > 0) {
-    handleClear3DObjects()
   }
 
   // 清理引擎资源
@@ -457,82 +378,6 @@ button:disabled {
   border-radius: 3px;
   padding: 4px 8px;
   border-left: 2px solid #28a745;
-}
-
-/* CSS3D控制面板样式 */
-.css3d-actions {
-  display: flex;
-  gap: 8px;
-  margin: 8px 0;
-}
-
-.css3d-actions button {
-  flex: 1;
-  background: #17a2b8;
-  font-size: 11px;
-}
-
-.css3d-actions button:hover:not(:disabled) {
-  background: #138496;
-}
-
-.css3d-interaction {
-  display: flex;
-  gap: 8px;
-  margin: 8px 0;
-}
-
-.css3d-interaction button {
-  flex: 1;
-  background: #6f42c1;
-  font-size: 11px;
-}
-
-.css3d-interaction button:hover:not(:disabled) {
-  background: #5a32a3;
-}
-
-.css3d-debug {
-  margin-top: 8px;
-  padding: 6px 10px;
-  background: #e8f4f8;
-  border-radius: 4px;
-  border-left: 3px solid #17a2b8;
-}
-
-.css3d-debug button {
-  flex: 1;
-  background: #17a2b8;
-  font-size: 11px;
-}
-
-.css3d-debug button:hover:not(:disabled) {
-  background: #138496;
-}
-
-.css3d-status {
-  margin-top: 8px;
-  padding: 6px 10px;
-  background: #e8f4f8;
-  border-radius: 4px;
-  border-left: 3px solid #17a2b8;
-}
-
-.css3d-status .status-item {
-  background: transparent;
-  border: none;
-  color: #0c5460;
-  font-weight: 500;
-}
-
-/* CSS3D按钮特殊样式 */
-.panel-section h3:contains("🌐") + * button {
-  background: #6f42c1;
-  margin: 2px;
-}
-
-.panel-section h3:contains("🌐") + * button:hover:not(:disabled) {
-  background: #5a32a3;
 }
 
 /* 控制器诊断按钮样式 */
