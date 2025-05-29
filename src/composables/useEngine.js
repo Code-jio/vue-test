@@ -41,7 +41,12 @@ export function useEngine() {
               // 让Three.js自动创建canvas并添加到document.body
               rendererConfig: {
                 container: document.getElementById("canvas-container"),
-              }
+              },
+              debugConfig: {
+                enabled: true,
+                gridHelper: true,
+                axesHelper: true,
+              },
             },
           },
         ],
@@ -95,7 +100,6 @@ export function useEngine() {
         pluginClass: EngineKernel.orbitControls,
         userData: {
           camera: baseScenePlugin.camera,
-          domElement: baseScenePlugin.renderer.domElement,
         },
       })
       .register({

@@ -77,6 +77,7 @@ defineExpose({
   display: flex;
   flex-direction: column;
   justify-content: end;
+  z-index: 1000;
   align-items: center;
 }
 

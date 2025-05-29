@@ -44,6 +44,7 @@ const resetForm = () => {
   border-radius: 8px;
   padding: 16px;
   max-width: 300px;
+  z-index: 1000;
 }
 
 .tag-form h4 {

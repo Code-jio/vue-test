@@ -38,6 +38,7 @@ const handleCardClick = () => {
   overflow: hidden;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
   max-width: 300px;
+  z-index: 1000;
 }
 
 .card-header {
