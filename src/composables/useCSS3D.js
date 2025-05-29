@@ -34,7 +34,6 @@ export function useCSS3D() {
       // 获取CSS3D插件
       css3dPlugin = engineInstance.getPlugin("CSS3DRenderPlugin")
       if (css3dPlugin) {
-        await css3dPlugin.init()
         css3dReady.value = true
         addDebugLog("success", "✅ CSS3D插件初始化完成")
       } else {
@@ -88,8 +87,8 @@ export function useCSS3D() {
         vm: vm,
         container: container,
         element: componentElement
-      }
-      
+      }      
+
       css3dObjects.value.push(objectData)
       componentInstances.set(objectId, objectData)
 

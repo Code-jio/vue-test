@@ -25,7 +25,18 @@ const playbackStatus = ref('暂停中')
 const playVideo = () => {
   playbackStatus.value = playbackStatus.value === '播放中' ? '暂停中' : '播放中'
   console.log('🎬 视频播放状态:', playbackStatus.value)
-  alert(`视频${playbackStatus.value === '播放中' ? '开始播放' : '已暂停'}`)
+  
+  // 增强反馈效果
+  alert(`🎬 CSS3D媒体组件交互成功！\n视频${playbackStatus.value === '播放中' ? '开始播放' : '已暂停'}`)
+  
+  // 视觉反馈
+  const element = event.target
+  if (element) {
+    element.style.transform = 'scale(1.1)'
+    setTimeout(() => {
+      element.style.transform = 'scale(1)'
+    }, 200)
+  }
 }
 
 // 暴露方法供外部调用

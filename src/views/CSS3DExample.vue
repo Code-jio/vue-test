@@ -13,6 +13,7 @@
         <button @click="clearAllObjects" class="btn danger" :disabled="!engineReady">清空所有对象</button>
         <button @click="debugCSS3DObjects" class="btn info" :disabled="!css3dPlugin">🔍 调试CSS3D对象</button>
         <button @click="adjustCameraView" class="btn secondary" :disabled="!css3dPlugin">📷 调整相机视角</button>
+        <button @click="testVueEvents" class="btn info" :disabled="!css3dPlugin">🧪 测试Vue事件绑定</button>
       </div>
       <div class="control-group">
         <button @click="toggleDebugMode" class="btn debug" :disabled="!engineReady">🐛 切换Debug模式</button>
@@ -241,15 +242,6 @@ const fixCSS3DRendererPosition = async () => {
       document.body.removeChild(css3dDomElement)
     }
     
-    // 设置CSS3D渲染器的样式以确保正确定位
-    css3dDomElement.style.position = 'absolute'
-    css3dDomElement.style.top = '0'
-    css3dDomElement.style.left = '0'
-    css3dDomElement.style.width = '100%'
-    css3dDomElement.style.height = '100%'
-    css3dDomElement.style.pointerEvents = 'none'  // 避免阻挡WebGL渲染器的交互
-    css3dDomElement.style.zIndex = '1'  // 确保在WebGL渲染器之上
-    
     // 将CSS3D渲染器添加到canvas容器中
     canvasContainer.appendChild(css3dDomElement)
     
@@ -265,13 +257,20 @@ const fixCSS3DRendererPosition = async () => {
 }
 
 /**
- * 渲染Vue组件为HTML元素（不在页面显示）
+ * 渲染Vue组件为HTML元素（保持Vue实例活跃）
  */
 const renderComponentToHTML = (component) => {
   return new Promise((resolve, reject) => {
     try {
-      // 创建一个临时的容器
+      // 创建一个临时的容器，但不隐藏它
       const tempContainer = document.createElement('div')
+      tempContainer.style.position = 'absolute'
+      tempContainer.style.top = '-9999px'  // 移到视窗外
+      tempContainer.style.left = '-9999px'
+      tempContainer.style.visibility = 'hidden'  // 隐藏但保持布局
+      
+      // 添加到DOM中（Vue实例需要在DOM中才能正常工作）
+      document.body.appendChild(tempContainer)
       
       // 创建Vue应用实例
       const app = createApp(component)
@@ -285,14 +284,25 @@ const renderComponentToHTML = (component) => {
         const renderedElement = tempContainer.firstElementChild
         
         if (renderedElement) {
-          // 克隆元素（脱离Vue实例）
-          const clonedElement = renderedElement.cloneNode(true)
+          // 不再克隆元素，直接使用原始元素
+          // 将元素从临时容器移除，但保持Vue实例活跃
+          tempContainer.removeChild(renderedElement)
           
-          // 卸载Vue实例
-          app.unmount()
+          // 清理临时容器
+          document.body.removeChild(tempContainer)
           
-          // 返回克隆的元素
-          resolve(clonedElement)
+          // 保存Vue实例引用到全局，避免被垃圾回收
+          if (!window.vueInstancesForCSS3D) {
+            window.vueInstancesForCSS3D = new Map()
+          }
+          
+          // 为元素生成唯一ID并保存Vue实例
+          const elementId = `vue-instance-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+          renderedElement.setAttribute('data-vue-instance-id', elementId)
+          window.vueInstancesForCSS3D.set(elementId, { app, instance })
+          
+          // 返回保持Vue实例活跃的元素
+          resolve(renderedElement)
         } else {
           reject(new Error('组件渲染失败'))
         }
@@ -321,46 +331,46 @@ const createCSS3DObjects = async () => {
 
     // 定义组件配置
     const componentConfigs = [
-    //   {
-    //     component: Chart3D,
-    //     css3dId: 'css3d-chart',
-    //     position: [-300, 150, 0],
-    //     rotation: [0, 0.2, 0],
-    //     scale: 1.2,
-    //     name: '图表组件'
-    //   },
+      {
+        component: Chart3D,
+        css3dId: 'css3d-chart',
+        position: [-300, 150, 0],
+        rotation: [0, 0.2, 0],
+        scale: 1.2,
+        name: '图表组件'
+      },
       {
         component: Card3D,
         css3dId: 'css3d-card',
         position: [0, 0, -0],
         rotation: [0, 0, 0],
-        scale: 10.0,
+        scale: 1.0,
         name: '卡片组件'
       },
-    //   {
-    //     component: Form3D,
-    //     css3dId: 'css3d-form',
-    //     position: [0, -150, 50],
-    //     rotation: [0.1, 0, 0],
-    //     scale: 1.1,
-    //     name: '表单组件'
-    //   },
-    //   {
-    //     component: Controls3D,
-    //     css3dId: 'css3d-controls',
-    //     position: [-150, -100, 100],
-    //     rotation: [0, 0.1, 0],
-    //     scale: 0.9,
-    //     name: '控制组件'
-    //   },
-    //   {
-    //     component: Media3D,
-    //     css3dId: 'css3d-media',
-    //     position: [150, 200, -150],
-    //     rotation: [0, -0.2, 0],
-    //     scale: 1.0,
-    //     name: '媒体组件'
-    //   }
+      {
+        component: Form3D,
+        css3dId: 'css3d-form',
+        position: [0, -150, 50],
+        rotation: [0.1, 0, 0],
+        scale: 1.1,
+        name: '表单组件'
+      },
+      {
+        component: Controls3D,
+        css3dId: 'css3d-controls',
+        position: [-150, -100, 100],
+        rotation: [0, 0.1, 0],
+        scale: 0.9,
+        name: '控制组件'
+      },
+      {
+        component: Media3D,
+        css3dId: 'css3d-media',
+        position: [150, 200, -150],
+        rotation: [0, -0.2, 0],
+        scale: 1.0,
+        name: '媒体组件'
+      }
     ]
 
     // 创建所有CSS3D对象
@@ -419,19 +429,55 @@ const clearAllObjects = () => {
   try {
     addDebugLog("info", "🗑️ 开始清空所有CSS3D对象")
     
-    // 移除所有创建的对象
+    // 移除所有创建的对象并清理Vue实例
     createdObjects.forEach(id => {
+      // 移除CSS3D对象
       css3dPlugin.removeObject(id)
+      
+      // 清理对应的Vue实例
+      cleanupVueInstanceForCSS3DObject(id)
     })
     
     createdObjects = []
     objectCount.value = 0
     sceneStatus.value = '所有对象已清空'
     
-    addDebugLog("success", "🗑️ 所有CSS3D对象已清空")
+    addDebugLog("success", "🗑️ 所有CSS3D对象及Vue实例已清空")
     
   } catch (error) {
     addDebugLog("error", `❌ 清空对象失败: ${error.message}`)
+  }
+}
+
+/**
+ * 清理CSS3D对象对应的Vue实例
+ */
+const cleanupVueInstanceForCSS3DObject = (objectId) => {
+  try {
+    if (!window.vueInstancesForCSS3D) return
+    
+    // 查找CSS3D对象中的元素
+    const css3dItem = css3dPlugin?.items?.get?.(objectId)
+    if (!css3dItem || !css3dItem.element) return
+    
+    const element = css3dItem.element
+    const vueInstanceId = element.getAttribute('data-vue-instance-id')
+    
+    if (vueInstanceId && window.vueInstancesForCSS3D.has(vueInstanceId)) {
+      const { app } = window.vueInstancesForCSS3D.get(vueInstanceId)
+      
+      // 卸载Vue实例
+      if (app && typeof app.unmount === 'function') {
+        app.unmount()
+        addDebugLog("success", `✅ Vue实例已清理: ${vueInstanceId}`)
+      }
+      
+      // 从全局映射中移除
+      window.vueInstancesForCSS3D.delete(vueInstanceId)
+    }
+    
+  } catch (error) {
+    addDebugLog("warning", `⚠️ 清理Vue实例时出错: ${error.message}`)
   }
 }
 
@@ -456,7 +502,24 @@ const cleanup = () => {
     if (css3dPlugin && createdObjects.length > 0) {
       createdObjects.forEach(id => {
         css3dPlugin.removeObject(id)
+        // 清理对应的Vue实例
+        cleanupVueInstanceForCSS3DObject(id)
       })
+    }
+    
+    // 清理剩余的Vue实例（防止遗漏）
+    if (window.vueInstancesForCSS3D) {
+      window.vueInstancesForCSS3D.forEach(({ app }, instanceId) => {
+        try {
+          if (app && typeof app.unmount === 'function') {
+            app.unmount()
+          }
+        } catch (error) {
+          console.warn(`清理Vue实例${instanceId}失败:`, error)
+        }
+      })
+      window.vueInstancesForCSS3D.clear()
+      addDebugLog("success", "✅ 所有Vue实例已清理")
     }
     
     // 清理创建的对象记录
@@ -660,6 +723,48 @@ const adjustCameraView = () => {
     
   } catch (error) {
     addDebugLog("error", `❌ 调整相机视角失败: ${error.message}`)
+  }
+}
+
+/**
+ * 测试Vue事件绑定是否正常工作
+ */
+const testVueEvents = () => {
+  try {
+    addDebugLog("info", "🧪 开始测试Vue事件绑定")
+    
+    if (!window.vueInstancesForCSS3D || window.vueInstancesForCSS3D.size === 0) {
+      addDebugLog("warning", "⚠️ 没有找到活跃的Vue实例")
+      alert("请先创建CSS3D对象后再测试事件绑定！")
+      return
+    }
+    
+    // 检查Vue实例状态
+    let activeInstances = 0
+    window.vueInstancesForCSS3D.forEach(({ app, instance }, instanceId) => {
+      if (app && instance) {
+        activeInstances++
+        addDebugLog("success", `✅ Vue实例活跃: ${instanceId}`)
+      }
+    })
+    
+    addDebugLog("info", `📊 共找到 ${activeInstances} 个活跃的Vue实例`)
+    
+    // 查找卡片按钮并模拟点击（程序化测试）
+    const cardButton = document.querySelector('[data-vue-instance-id] .card-button')
+    if (cardButton) {
+      addDebugLog("info", "🎯 找到卡片按钮，测试程序化点击")
+      cardButton.click()
+      addDebugLog("success", "✅ 程序化点击测试完成")
+    } else {
+      addDebugLog("warning", "⚠️ 未找到卡片按钮")
+    }
+    
+    // 提示用户手动测试
+    alert(`🧪 Vue事件绑定测试:\n\n✅ 找到 ${activeInstances} 个活跃Vue实例\n\n💡 请手动点击3D场景中的按钮来测试交互！\n\n📍 如果按钮有响应，说明事件绑定成功！`)
+    
+  } catch (error) {
+    addDebugLog("error", `❌ 测试Vue事件绑定失败: ${error.message}`)
   }
 }
 

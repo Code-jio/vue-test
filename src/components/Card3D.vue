@@ -26,6 +26,18 @@ const handleCardClick = () => {
   cardStats.views++
   cardStats.likes++
   console.log('🎯 卡片被点击了！', cardStats)
+  
+  // 添加更明显的反馈
+  alert(`🎉 CSS3D卡片点击成功！\n浏览量: ${cardStats.views}\n点赞数: ${cardStats.likes}`)
+  
+  // 可以在这里触发其他交互效果
+  const button = event.target
+  if (button) {
+    button.style.transform = 'scale(0.95)'
+    setTimeout(() => {
+      button.style.transform = 'scale(1)'
+    }, 150)
+  }
 }
 </script>
 
@@ -39,6 +51,7 @@ const handleCardClick = () => {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
   max-width: 300px;
   z-index: 1000;
+  pointer-events: auto;
 }
 
 .card-header {
@@ -73,6 +86,7 @@ const handleCardClick = () => {
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.3s;
+  pointer-events: auto;
 }
 
 .card-button:hover {
