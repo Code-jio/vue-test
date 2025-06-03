@@ -107,7 +107,7 @@ export function useCSS3D() {
       name: 'Vue卡片',
       position: [0, 0, -100],
       rotation: [0, 0, 0],
-      scale: 1
+      scale: 0.1
     }, addDebugLog)
   }
 
@@ -118,7 +118,7 @@ export function useCSS3D() {
       name: '表单',
       position: [getRandomPosition(), getRandomPosition(), getRandomPosition()],
       rotation: [0, Math.random() * Math.PI, 0],
-      scale: 0.6
+      scale: 0.1
     }, addDebugLog)
   }
 
@@ -129,7 +129,7 @@ export function useCSS3D() {
       name: '图表',
       position: [getRandomPosition(), getRandomPosition(), getRandomPosition()],
       rotation: [0, Math.random() * Math.PI, 0],
-      scale: 0.7
+      scale: 0.1
     }, addDebugLog)
   }
 
@@ -140,7 +140,7 @@ export function useCSS3D() {
       name: '控制面板',
       position: [getRandomPosition(), getRandomPosition(), getRandomPosition()],
       rotation: [0, Math.random() * Math.PI, 0],
-      scale: 0.8
+      scale: 0.1
     }, addDebugLog)
   }
 
@@ -151,7 +151,7 @@ export function useCSS3D() {
       name: '媒体播放器',
       position: [getRandomPosition(), getRandomPosition(), getRandomPosition()],
       rotation: [0, Math.random() * Math.PI, 0],
-      scale: 0.6
+      scale: 0.1
     }, addDebugLog)
   }
 

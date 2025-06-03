@@ -1,7 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 
-const showNav = ref(true)
+const showNav = ref(false)
 
 const toggleNav = () => {
   showNav.value = !showNav.value
@@ -19,6 +19,12 @@ const toggleNav = () => {
         </router-link>
         <router-link to="/webgl-test" class="nav-link" active-class="active">
           🎮 WebGL测试
+        </router-link>
+        <router-link to="/text-marker-test" class="nav-link" active-class="active">
+          📝 图文标注测试
+        </router-link>
+        <router-link to="/css3d-example" class="nav-link" active-class="active">
+          🎨 CSS3D示例
         </router-link>
       </div>
       <button class="nav-toggle" @click="toggleNav">{{ showNav ? '隐藏' : '显示' }}</button>

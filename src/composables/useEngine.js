@@ -74,8 +74,6 @@ export function useEngine() {
       }
 
       addDebugLog("success", "✅ 基础场景插件加载完成")
-      console.log("🚀 ~ engine:", engineInstance)
-      console.log(baseScenePlugin, "基础场景插件")
 
       // 注册其他插件
       registerAdditionalPlugins(addDebugLog)
@@ -97,9 +95,10 @@ export function useEngine() {
       .register({
         name: "orbitControl",
         path: "/plugin/webgl/renderLoop",
-        pluginClass: EngineKernel.orbitControls,
+        pluginClass: EngineKernel.BaseControls,
         userData: {
           camera: baseScenePlugin.camera,
+          scene: baseScenePlugin.scene,
         },
       })
       .register({
@@ -125,7 +124,7 @@ export function useEngine() {
     modelMarker = engineInstance.getPlugin("ModelMarkerPlugin")
     orbitControlPlugin = engineInstance.getPlugin("orbitControl")
     
-    console.log(modelMarker, "模型标记插件")
+    // console.log(modelMarker, "模型标记插件")
     addDebugLog("success", "✅ 轨道控制器插件加载完成")
   }
 

@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import WebGLTestView from '@/views/WebGLTestView.vue'
 import EnginePrototypeView from '@/views/EnginePrototypeView.vue'
 import CSS3DExampleView from '@/views/CSS3DExample.vue'
+import TextMarkerTestView from '@/views/TextMarkerTestView.vue'
 // import CSS3DAdvancedView from '@/views/CSS3DAdvanced.vue'
 
 const router = createRouter({
@@ -9,7 +10,7 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: '/engine-prototype'
+      redirect: '/text-marker-test'
     },
     {
       path: '/webgl-test',
@@ -37,6 +38,14 @@ const router = createRouter({
       component: CSS3DExampleView,
       meta: {
         title: 'CSS3D示例'
+      }
+    },
+    {
+      path: '/text-marker-test',
+      name: 'text-marker-test',
+      component: TextMarkerTestView,
+      meta: {
+        title: '图文标注测试'
       }
     },
     // {

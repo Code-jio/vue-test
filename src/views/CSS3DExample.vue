@@ -334,41 +334,41 @@ const createCSS3DObjects = async () => {
       {
         component: Chart3D,
         css3dId: 'css3d-chart',
-        position: [-300, 150, 0],
+        position: [0, 0, 0],
         rotation: [0, 0.2, 0],
-        scale: 1.2,
+        scale: 0.1,
         name: '图表组件'
       },
       {
         component: Card3D,
         css3dId: 'css3d-card',
-        position: [0, 0, -0],
+        position: [0, 0, 40],
         rotation: [0, 0, 0],
-        scale: 1.0,
+        scale: 0.1,
         name: '卡片组件'
       },
       {
         component: Form3D,
         css3dId: 'css3d-form',
-        position: [0, -150, 50],
+        position: [0, -50, 50],
         rotation: [0.1, 0, 0],
-        scale: 1.1,
+        scale: 0.1,
         name: '表单组件'
       },
       {
         component: Controls3D,
         css3dId: 'css3d-controls',
-        position: [-150, -100, 100],
+        position: [-100, 0, 10],
         rotation: [0, 0.1, 0],
-        scale: 0.9,
+        scale: 0.1,
         name: '控制组件'
       },
       {
         component: Media3D,
         css3dId: 'css3d-media',
-        position: [150, 200, -150],
+        position: [50, 20, -50],
         rotation: [0, -0.2, 0],
-        scale: 1.0,
+        scale: 0.1,
         name: '媒体组件'
       }
     ]

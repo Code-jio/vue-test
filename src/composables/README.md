@@ -111,6 +111,36 @@ const {
 } = useControls()
 ```
 
+### 📝 useTextMarker.js - 图文标注功能
+专门管理3D场景中的图文标注功能。
+
+**主要功能：**
+- 图文标注引擎初始化
+- 标注创建和管理
+- 样式配置
+- 位置控制
+- 交互事件处理
+
+**导出内容：**
+```javascript
+const {
+  engineReady,             // 引擎就绪状态
+  markerCount,             // 标注数量
+  markerList,              // 标注列表
+  markerConfig,            // 标注配置
+  markerPosition,          // 位置配置
+  initializeTextMarkerEngine, // 初始化引擎
+  addBasicMarker,          // 添加基础标注
+  addImageMarker,          // 添加图片标注
+  addStyledMarker,         // 添加样式标注
+  clearAllMarkers,         // 清空所有标注
+  focusMarker,             // 聚焦标注
+  toggleMarkerVisibility,  // 切换可见性
+  removeMarker,            // 移除标注
+  // ... 更多方法
+} = useTextMarker()
+```
+
 ## 使用示例
 
 ### 基本用法
@@ -136,6 +166,9 @@ export default {
 
 ### 完整集成
 参考 `EnginePrototypeView.vue` 中的使用方式，展示了如何将所有模块组合使用。
+
+### 图文标注专用
+参考 `TextMarkerTestView.vue` 中的使用方式，展示了如何使用 useTextMarker 和 useDebug 模块创建专门的功能测试页面。
 
 ## 架构优势
 
