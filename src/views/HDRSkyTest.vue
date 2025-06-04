@@ -144,8 +144,14 @@ const initializeHDREngine = async () => {
   try {
     addDebugLog('info', '🚀 开始初始化HDR天空盒引擎')
     
+    const hdrSkyBoxConfig = {
+      skyBoxType: EngineKernel.SkyBoxType.HDR_ENVIRONMENT,
+      hdrMapPath: '/skybox/rustig_koppie_puresky_2k.hdr',
+      hdrIntensity: hdrIntensity.value,
+      size: 50000
+    }
     // 复用useEngine的初始化逻辑
-    await initializeEngine(addDebugLog)
+    await initializeEngine(addDebugLog, hdrSkyBoxConfig)
     
     // 等待引擎就绪
     await waitForEngineReady()

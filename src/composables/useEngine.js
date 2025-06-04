@@ -112,6 +112,7 @@ export function useEngine(options = {}) {
 
     // 只有在没有自定义天空盒配置时，才注册默认天空盒
     if (!customSkyBoxConfig) {
+      debugger
       engineInstance.register({
         name: "SkyBoxPlugin",
         path: "/plugins/webgl/skyBox",
