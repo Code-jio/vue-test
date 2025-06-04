@@ -1,7 +1,7 @@
 import { ref, nextTick } from 'vue'
 
 // 引擎核心功能管理
-export function useEngine() {
+export function useEngine(options = {}) {
   // 响应式状态
   const engineReady = ref(false)
   const initStatus = ref("准备中...")
@@ -13,7 +13,7 @@ export function useEngine() {
   let modelMarker = null
 
   // 初始化三维引擎
-  const initializeEngine = async (addDebugLog) => {
+  const initializeEngine = async (addDebugLog, customSkyBoxConfig = null) => {
     try {
       initStatus.value = "初始化中..."
       addDebugLog("info", "🚀 开始初始化EngineKernel")
@@ -75,8 +75,8 @@ export function useEngine() {
 
       addDebugLog("success", "✅ 基础场景插件加载完成")
 
-      // 注册其他插件
-      registerAdditionalPlugins(addDebugLog)
+      // 注册其他插件（包含天空盒配置）
+      registerAdditionalPlugins(addDebugLog, customSkyBoxConfig)
 
       // 监听初始化完成事件
       engineInstance.on("init-complete", () => onEngineInitComplete(addDebugLog))
@@ -90,7 +90,7 @@ export function useEngine() {
   }
 
   // 注册额外插件
-  const registerAdditionalPlugins = (addDebugLog) => {
+  const registerAdditionalPlugins = (addDebugLog, customSkyBoxConfig = null) => {
     engineInstance
       .register({
         name: "orbitControl",
@@ -109,7 +109,10 @@ export function useEngine() {
           scene: baseScenePlugin.scene,
         },
       })
-      .register({
+
+    // 只有在没有自定义天空盒配置时，才注册默认天空盒
+    if (!customSkyBoxConfig) {
+      engineInstance.register({
         name: "SkyBoxPlugin",
         path: "/plugins/webgl/skyBox",
         pluginClass: EngineKernel.SkyBox,
@@ -120,6 +123,20 @@ export function useEngine() {
           skyBoxType: EngineKernel.SkyBoxType.PROCEDURAL_SKY,
         },
       })
+    } else {
+      // 使用自定义天空盒配置
+      engineInstance.register({
+        name: "SkyBoxPlugin",
+        path: "/plugins/webgl/skyBox",
+        pluginClass: EngineKernel.SkyBox,
+        userData: {
+          scene: baseScenePlugin.scene,
+          camera: baseScenePlugin.camera,
+          renderer: baseScenePlugin.renderer,
+          ...customSkyBoxConfig
+        },
+      })
+    }
 
     modelMarker = engineInstance.getPlugin("ModelMarkerPlugin")
     orbitControlPlugin = engineInstance.getPlugin("orbitControl")

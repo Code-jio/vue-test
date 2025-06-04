@@ -3,6 +3,8 @@ import WebGLTestView from '@/views/WebGLTestView.vue'
 import EnginePrototypeView from '@/views/EnginePrototypeView.vue'
 import CSS3DExampleView from '@/views/CSS3DExample.vue'
 import TextMarkerTestView from '@/views/TextMarkerTestView.vue'
+import HDRSkyTestView from '@/views/HDRSkyTest.vue'
+import HDRSkyBasicExampleView from '@/views/HDRSkyBasicExample.vue'
 // import CSS3DAdvancedView from '@/views/CSS3DAdvanced.vue'
 
 const router = createRouter({
@@ -46,6 +48,15 @@ const router = createRouter({
       component: TextMarkerTestView,
       meta: {
         title: '图文标注测试'
+      }
+    },
+    {
+      path: '/hdr-sky-test',
+      name: 'hdr-sky-test',
+      component: HDRSkyTestView,
+      // component: HDRSkyBasicExampleView,
+      meta: {
+        title: 'HDR天空盒测试'
       }
     },
     // {
