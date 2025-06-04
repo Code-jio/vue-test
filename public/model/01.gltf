@@ -1,0 +1,651 @@
+{
+  "asset": {
+    "version": "2.0",
+    "generator": "babylon.js glTF exporter for 3dsmax 2023 v20240312.5"
+  },
+  "scene": 0,
+  "scenes": [
+    {
+      "nodes": [
+        0
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "mesh": 0,
+      "translation": [
+        3347.03076,
+        -11.7679291,
+        -1293.61279
+      ],
+      "rotation": [
+        0.0,
+        8.742278E-08,
+        0.0,
+        1.0
+      ],
+      "name": "墙147"
+    }
+  ],
+  "meshes": [
+    {
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "indices": 0,
+          "material": 0
+        },
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "indices": 4,
+          "material": 1
+        },
+        {
+          "attributes": {
+            "POSITION": 9,
+            "NORMAL": 10,
+            "TEXCOORD_0": 11
+          },
+          "indices": 8,
+          "material": 2
+        },
+        {
+          "attributes": {
+            "POSITION": 13,
+            "NORMAL": 14,
+            "TEXCOORD_0": 15
+          },
+          "indices": 12,
+          "material": 3
+        },
+        {
+          "attributes": {
+            "POSITION": 17,
+            "NORMAL": 18,
+            "TEXCOORD_0": 19
+          },
+          "indices": 16,
+          "material": 4
+        },
+        {
+          "attributes": {
+            "POSITION": 21,
+            "NORMAL": 22,
+            "TEXCOORD_0": 23
+          },
+          "indices": 20,
+          "material": 5
+        },
+        {
+          "attributes": {
+            "POSITION": 25,
+            "NORMAL": 26,
+            "TEXCOORD_0": 27
+          },
+          "indices": 24,
+          "material": 6
+        },
+        {
+          "attributes": {
+            "POSITION": 29,
+            "NORMAL": 30,
+            "TEXCOORD_0": 31
+          },
+          "indices": 28,
+          "material": 7
+        },
+        {
+          "attributes": {
+            "POSITION": 33,
+            "NORMAL": 34,
+            "TEXCOORD_0": 35
+          },
+          "indices": 32,
+          "material": 8
+        }
+      ],
+      "name": "墙147"
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5123,
+      "count": 4236,
+      "type": "SCALAR",
+      "name": "accessorIndices"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 2128,
+      "max": [
+        145.356964,
+        165.268173,
+        71.22681
+      ],
+      "min": [
+        71.05786,
+        41.5532379,
+        -52.4733276
+      ],
+      "type": "VEC3",
+      "name": "accessorPositions"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 25536,
+      "componentType": 5126,
+      "count": 2128,
+      "type": "VEC3",
+      "name": "accessorNormals"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 2128,
+      "type": "VEC2",
+      "name": "accessorUVs"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 8472,
+      "componentType": 5123,
+      "count": 17016,
+      "type": "SCALAR",
+      "name": "accessorIndices"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 51072,
+      "componentType": 5126,
+      "count": 10368,
+      "max": [
+        145.3454,
+        167.633514,
+        66.0564041
+      ],
+      "min": [
+        -133.152313,
+        0.0,
+        -52.9579544
+      ],
+      "type": "VEC3",
+      "name": "accessorPositions"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 175488,
+      "componentType": 5126,
+      "count": 10368,
+      "type": "VEC3",
+      "name": "accessorNormals"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 17024,
+      "componentType": 5126,
+      "count": 10368,
+      "type": "VEC2",
+      "name": "accessorUVs"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 42504,
+      "componentType": 5123,
+      "count": 2493,
+      "type": "SCALAR",
+      "name": "accessorIndices"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 299904,
+      "componentType": 5126,
+      "count": 1117,
+      "max": [
+        145.351883,
+        170.032181,
+        74.07389
+      ],
+      "min": [
+        -144.981812,
+        0.0,
+        -74.07443
+      ],
+      "type": "VEC3",
+      "name": "accessorPositions"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 313308,
+      "componentType": 5126,
+      "count": 1117,
+      "type": "VEC3",
+      "name": "accessorNormals"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 99968,
+      "componentType": 5126,
+      "count": 1117,
+      "type": "VEC2",
+      "name": "accessorUVs"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 47492,
+      "componentType": 5123,
+      "count": 6336,
+      "type": "SCALAR",
+      "name": "accessorIndices"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 326712,
+      "componentType": 5126,
+      "count": 2620,
+      "max": [
+        116.11982,
+        56.0788269,
+        72.58524
+      ],
+      "min": [
+        58.4801865,
+        43.8977661,
+        -31.1877575
+      ],
+      "type": "VEC3",
+      "name": "accessorPositions"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 358152,
+      "componentType": 5126,
+      "count": 2620,
+      "type": "VEC3",
+      "name": "accessorNormals"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 108904,
+      "componentType": 5126,
+      "count": 2620,
+      "type": "VEC2",
+      "name": "accessorUVs"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 60164,
+      "componentType": 5123,
+      "count": 711,
+      "type": "SCALAR",
+      "name": "accessorIndices"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 389592,
+      "componentType": 5126,
+      "count": 239,
+      "max": [
+        102.945877,
+        40.88623,
+        72.5889053
+      ],
+      "min": [
+        58.3454056,
+        40.6532135,
+        -31.1840343
+      ],
+      "type": "VEC3",
+      "name": "accessorPositions"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 392460,
+      "componentType": 5126,
+      "count": 239,
+      "type": "VEC3",
+      "name": "accessorNormals"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 129864,
+      "componentType": 5126,
+      "count": 239,
+      "type": "VEC2",
+      "name": "accessorUVs"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 61588,
+      "componentType": 5123,
+      "count": 21927,
+      "type": "SCALAR",
+      "name": "accessorIndices"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 395328,
+      "componentType": 5126,
+      "count": 10063,
+      "max": [
+        116.83667,
+        56.07794,
+        73.06315
+      ],
+      "min": [
+        58.018837,
+        43.33471,
+        -31.6573
+      ],
+      "type": "VEC3",
+      "name": "accessorPositions"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 516084,
+      "componentType": 5126,
+      "count": 10063,
+      "type": "VEC3",
+      "name": "accessorNormals"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 131776,
+      "componentType": 5126,
+      "count": 10063,
+      "type": "VEC2",
+      "name": "accessorUVs"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 105444,
+      "componentType": 5123,
+      "count": 4428,
+      "type": "SCALAR",
+      "name": "accessorIndices"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 636840,
+      "componentType": 5126,
+      "count": 1956,
+      "max": [
+        117.293427,
+        140.963974,
+        73.69839
+      ],
+      "min": [
+        -144.607544,
+        41.5532532,
+        -73.69995
+      ],
+      "type": "VEC3",
+      "name": "accessorPositions"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 660312,
+      "componentType": 5126,
+      "count": 1956,
+      "type": "VEC3",
+      "name": "accessorNormals"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 212280,
+      "componentType": 5126,
+      "count": 1956,
+      "type": "VEC2",
+      "name": "accessorUVs"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 114300,
+      "componentType": 5123,
+      "count": 3636,
+      "type": "SCALAR",
+      "name": "accessorIndices"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 683784,
+      "componentType": 5126,
+      "count": 2424,
+      "max": [
+        115.270447,
+        55.89128,
+        73.06138
+      ],
+      "min": [
+        58.0386658,
+        41.0871277,
+        -31.6049328
+      ],
+      "type": "VEC3",
+      "name": "accessorPositions"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 712872,
+      "componentType": 5126,
+      "count": 2424,
+      "type": "VEC3",
+      "name": "accessorNormals"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 227928,
+      "componentType": 5126,
+      "count": 2424,
+      "type": "VEC2",
+      "name": "accessorUVs"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 121572,
+      "componentType": 5123,
+      "count": 38700,
+      "type": "SCALAR",
+      "name": "accessorIndices"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 741960,
+      "componentType": 5126,
+      "count": 16680,
+      "max": [
+        -61.91124,
+        171.531464,
+        74.44922
+      ],
+      "min": [
+        -145.356964,
+        0.000114440918,
+        -74.4490662
+      ],
+      "type": "VEC3",
+      "name": "accessorPositions"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 942120,
+      "componentType": 5126,
+      "count": 16680,
+      "type": "VEC3",
+      "name": "accessorNormals"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 247320,
+      "componentType": 5126,
+      "count": 16680,
+      "type": "VEC2",
+      "name": "accessorUVs"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 198972,
+      "name": "bufferViewScalar"
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 198972,
+      "byteLength": 1142280,
+      "byteStride": 12,
+      "name": "bufferViewFloatVec3"
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1341252,
+      "byteLength": 380760,
+      "byteStride": 8,
+      "name": "bufferViewFloatVec2"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "01.bin",
+      "byteLength": 1722012
+    }
+  ],
+  "materials": [
+    {
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.694117665,
+          0.6156863,
+          0.5372549,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.450053632
+      },
+      "name": "墙1"
+    },
+    {
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.9215687,
+          0.9215687,
+          0.9215687,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.450053632
+      },
+      "doubleSided": true,
+      "name": "dim"
+    },
+    {
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.733333349,
+          0.7686275,
+          0.909804,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.328809023
+      },
+      "name": "玻璃"
+    },
+    {
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0,
+          "scale": 0.399999976
+        },
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.3398683
+      },
+      "name": "墙122222123"
+    },
+    {
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.5882353,
+          0.5882353,
+          0.5882353,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.450053632
+      },
+      "name": "铺地2"
+    },
+    {
+      "pbrMetallicRoughness": {
+        "baseColorTexture": {
+          "index": 0,
+          "scale": 0.399999976
+        },
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.3398683
+      },
+      "name": "墙12"
+    },
+    {
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.588,
+          0.588,
+          0.588,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.313858032
+      },
+      "name": "楼板1"
+    },
+    {
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.4666667,
+          0.4666667,
+          0.4666667,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.450053632
+      },
+      "name": "柱子"
+    },
+    {
+      "pbrMetallicRoughness": {
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.450053632
+      },
+      "name": "Material #2143309874"
+    }
+  ],
+  "textures": [
+    {
+      "sampler": 0,
+      "source": 0,
+      "name": "terracotta_02_diffuse.jpg"
+    }
+  ],
+  "images": [
+    {
+      "uri": "terracotta_02_diffuse.jpg"
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987
+    }
+  ]
+}
