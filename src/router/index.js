@@ -5,6 +5,7 @@ import CSS3DExampleView from '@/views/CSS3DExample.vue'
 import TextMarkerTestView from '@/views/TextMarkerTestView.vue'
 import HDRSkyTestView from '@/views/HDRSkyTest.vue'
 import HDRSkyBasicExampleView from '@/views/HDRSkyBasicExample.vue'
+import ModelLoadTestView from '@/views/modelLoadTest.vue'
 // import CSS3DAdvancedView from '@/views/CSS3DAdvanced.vue'
 
 const router = createRouter({
@@ -57,6 +58,14 @@ const router = createRouter({
       // component: HDRSkyBasicExampleView,
       meta: {
         title: 'HDR天空盒测试'
+      }
+    },
+    {
+      path: '/model-load-test',
+      name: 'model-load-test',
+      component: ModelLoadTestView,
+      meta: {
+        title: '模型加载性能测试'
       }
     },
     // {

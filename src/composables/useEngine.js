@@ -112,8 +112,7 @@ export function useEngine(options = {}) {
 
     // 只有在没有自定义天空盒配置时，才注册默认天空盒
     if (!customSkyBoxConfig) {
-      debugger
-      engineInstance.register({
+        engineInstance.register({
         name: "SkyBoxPlugin",
         path: "/plugins/webgl/skyBox",
         pluginClass: EngineKernel.SkyBox,
@@ -278,15 +277,37 @@ export function useEngine(options = {}) {
     }
   }
 
+  // 添加获取引擎实例的方法
+  const getEngineInstance = () => {
+    return engineInstance
+  }
+
+  // 获取轨道控制器插件
+  const getOrbitControlPlugin = () => {
+    return orbitControlPlugin
+  }
+
+  // 获取基础场景插件
+  const getBaseScenePlugin = () => {
+    return baseScenePlugin
+  }
+
+  // 获取模型标记插件
+  const getModelMarkerPlugin = () => {
+    return modelMarker
+  }
+
+  // 设置调试模式（占位符函数）
+  const setDebugMode = (enabled, addDebugLog) => {
+    if (addDebugLog) {
+      addDebugLog("info", `🔧 调试模式${enabled ? '已启用' : '已禁用'}`)
+    }
+  }
+
   return {
     // 状态
     engineReady,
     initStatus,
-    
-    // 实例获取器
-    getEngineInstance: () => engineInstance,
-    getBaseScenePlugin: () => baseScenePlugin,
-    getOrbitControlPlugin: () => orbitControlPlugin,
     
     // 方法
     initializeEngine,
@@ -294,6 +315,11 @@ export function useEngine(options = {}) {
     resetCamera,
     toggleSkybox,
     showCacheStatus,
-    clearResourceCache
+    clearResourceCache,
+    getOrbitControlPlugin,
+    getBaseScenePlugin,
+    getEngineInstance,
+    getModelMarkerPlugin,
+    setDebugMode
   }
 } 

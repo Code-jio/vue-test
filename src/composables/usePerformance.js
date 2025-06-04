@@ -1,4 +1,4 @@
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 
 // 性能监控功能管理
 export function usePerformance() {
@@ -11,9 +11,13 @@ export function usePerformance() {
   let lastTime = performance.now()
   let frameCount = 0
 
-  // 启动FPS监控
+  // 启动FPS监控 - 修复版本
   const startFpsMonitoring = (engineReady) => {
+    let isMonitoring = false
+
     const updateFps = () => {
+      if (!isMonitoring) return
+      
       frameCount++
       const currentTime = performance.now()
 
@@ -25,20 +29,52 @@ export function usePerformance() {
         lastTime = currentTime
       }
 
-      if (engineReady.value) {
-        animationId = requestAnimationFrame(updateFps)
+      // 无论引擎是否就绪都继续监控
+      animationId = requestAnimationFrame(updateFps)
+    }
+
+    // 启动监控
+    const startMonitoring = () => {
+      if (isMonitoring) return
+      isMonitoring = true
+      frameCount = 0
+      lastTime = performance.now()
+      updateFps()
+    }
+
+    // 停止监控
+    const stopMonitoring = () => {
+      isMonitoring = false
+      if (animationId) {
+        cancelAnimationFrame(animationId)
+        animationId = null
       }
     }
 
-    updateFps()
+    // 如果引擎已经就绪，立即启动
+    if (engineReady.value) {
+      startMonitoring()
+    } else {
+      // 否则等待引擎就绪
+      const unwatch = watch(engineReady, (ready) => {
+        if (ready) {
+          startMonitoring()
+          unwatch() // 只需要监听一次
+        }
+      })
+    }
+
+    // 返回停止函数
+    return stopMonitoring
   }
 
-  // 停止FPS监控
+  // 修改停止FPS监控
   const stopFpsMonitoring = () => {
     if (animationId) {
       cancelAnimationFrame(animationId)
       animationId = null
     }
+    fpsCounter.value = 0
   }
 
   // 设置相机位置监控

@@ -26,6 +26,9 @@ const toggleNav = () => {
         <router-link to="/hdr-sky-test" class="nav-link" active-class="active">
           🌅 HDR天空盒测试
         </router-link>
+        <router-link to="/model-load-test" class="nav-link" active-class="active">
+          📊 模型加载性能测试
+        </router-link>
         <router-link to="/css3d-example" class="nav-link" active-class="active">
           🎨 CSS3D示例
         </router-link>
