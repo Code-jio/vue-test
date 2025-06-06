@@ -6,6 +6,9 @@ const showNav = ref(false)
 const toggleNav = () => {
   showNav.value = !showNav.value
 }
+
+
+// 在prototype-view路由页
 </script>
 
 <template>
@@ -68,8 +71,9 @@ const toggleNav = () => {
   display: flex;
   align-items: center;
   padding: 0 20px;
-  z-index: 1001;
+  z-index: 1002; /* 确保在所有3D场景元素之上 */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  pointer-events: auto !important; /* 强制确保导航可以点击 */
 }
 
 .nav-brand {
@@ -130,13 +134,14 @@ const toggleNav = () => {
   border: 1px solid #ddd;
   border-radius: 50%;
   cursor: pointer;
-  z-index: 1001;
+  z-index: 1002; /* 确保在所有3D场景元素之上 */
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 16px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   transition: all 0.2s;
+  pointer-events: auto !important; /* 强制确保可以点击 */
 }
 
 .nav-toggle-mini:hover {

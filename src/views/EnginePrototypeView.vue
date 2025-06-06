@@ -9,6 +9,8 @@
 </template>
 
 <script setup>
+console.time("场景初始化")
+
 import { ref, onMounted, onUnmounted, createApp } from "vue";
 import { useEngine } from '@/composables/useEngine'
 import { useDebug } from '@/composables/useDebug'
@@ -45,10 +47,12 @@ let css3dInfoInstance = null
 
 // 动画相关
 let animationId = null
-let pathPoints = []
-let currentPathIndex = 0
-let pathProgress = 0
-const animationSpeed = 0.002
+let currentTarget = null
+let currentPosition = null
+let moveStartTime = 0
+let moveDuration = 5000 // 移动到目标点的时间（毫秒）
+let trajectoryPoints = [] // 轨迹点数组
+let trajectoryLine = null // 轨迹线对象
 
 // 清理函数存储
 let pickEventCleanup = []
@@ -120,14 +124,22 @@ const initializeCSS3D = async () => {
 
     addDebugLog("info", "🎨 开始初始化CSS3D插件")
 
+    // 确保CSS3D容器存在
+    const css3dContainer = document.getElementById('css3d-container')
+    if (!css3dContainer) {
+      throw new Error('CSS3D容器未找到')
+    }
+
     // 注册CSS3D插件
     engineInstance.register({
-      name: "CSS3DRenderPlugin",
+      name: "CSS3DRenderPlugin", 
       path: "/plugins/webgl/css3DRender",
       pluginClass: EngineKernel.CSS3DRenderPlugin,
       userData: {
         scene: baseScenePlugin.scene,
         renderer: baseScenePlugin.renderer,
+        container: css3dContainer,
+        camera: baseScenePlugin.camera,
       },
     })
 
@@ -135,6 +147,28 @@ const initializeCSS3D = async () => {
     css3dPlugin = engineInstance.getPlugin("CSS3DRenderPlugin")
     
     if (css3dPlugin) {
+      addDebugLog("info", "🔍 检查CSS3D插件方法...")
+      
+      // 检查可用方法
+      const methods = ['createCSS3DObject', 'addObject', 'removeObject', 'render']
+      methods.forEach(method => {
+        const available = typeof css3dPlugin[method] === 'function'
+        addDebugLog("info", `📋 ${method}: ${available ? '✅ 可用' : '❌ 不可用'}`)
+      })
+      
+      // 启动CSS3D渲染循环
+      if (typeof css3dPlugin.startRenderLoop === 'function') {
+        css3dPlugin.startRenderLoop()
+        addDebugLog("info", "🎬 CSS3D渲染循环已启动")
+      }
+      
+      // 确保CSS3D能正常渲染
+      if (typeof css3dPlugin.render === 'function') {
+        // 手动触发一次渲染测试
+        css3dPlugin.render(baseScenePlugin.camera)
+        addDebugLog("info", "🎯 CSS3D首次渲染测试完成")
+      }
+      
       addDebugLog("success", "✅ CSS3D插件初始化完成")
     } else {
       throw new Error('CSS3D插件获取失败')
@@ -142,6 +176,7 @@ const initializeCSS3D = async () => {
     
   } catch (error) {
     addDebugLog("error", `❌ CSS3D插件初始化失败: ${error.message}`)
+    console.error('CSS3D初始化错误详情:', error)
     throw error
   }
 }
@@ -171,63 +206,148 @@ const setupPickEventListeners = () => {
 
 // 显示模型信息
 const showModelInfo = (pickedObject) => {
-  if (!css3dPlugin || !pickedObject) return
+  if (!css3dPlugin || !pickedObject) {
+    addDebugLog("error", "❌ CSS3D插件或拾取对象不存在")
+    return
+  }
 
   try {
+    addDebugLog("info", `🎯 准备显示模型信息: ${pickedObject.name}`)
+    
     // 清理之前的信息面板
     if (css3dInfoInstance) {
-      css3dPlugin.remove3DObject(css3dInfoInstance)
+      try {
+        if (typeof css3dPlugin.removeObject === 'function') {
+          css3dPlugin.removeObject(css3dInfoInstance)
+        } else if (typeof css3dPlugin.remove3DObject === 'function') {
+          css3dPlugin.remove3DObject(css3dInfoInstance)
+        }
+        addDebugLog("info", "🗑️ 已清理之前的信息面板")
+      } catch (e) {
+        addDebugLog("warning", `⚠️ 清理面板失败: ${e.message}`)
+      }
       css3dInfoInstance = null
     }
 
     // 获取模型信息
     const modelInfo = extractModelInfo(pickedObject)
+    addDebugLog("info", `📋 模型信息: ${modelInfo.name} (${modelInfo.type})`)
+    
+    // 创建DOM容器
+    const container = document.createElement('div')
+    container.className = 'model-info-container'
+    container.style.cssText = `
+      position: relative;
+      pointer-events: auto;
+      z-index: 1;
+      transform-style: preserve-3d;
+      background: transparent;
+    `
     
     // 创建Vue应用实例
     const infoApp = createApp(ModelMessage, {
       modelInfo: modelInfo,
       onClose: () => {
-        if (css3dInfoInstance) {
-          css3dPlugin.remove3DObject(css3dInfoInstance)
-          css3dInfoInstance = null
+        addDebugLog("info", "📱 用户点击关闭按钮")
+        if (css3dInfoInstance && css3dPlugin) {
+          try {
+            if (typeof css3dPlugin.removeObject === 'function') {
+              css3dPlugin.removeObject(css3dInfoInstance)
+            } else if (typeof css3dPlugin.remove3DObject === 'function') {
+              css3dPlugin.remove3DObject(css3dInfoInstance)
+            }
+            css3dInfoInstance = null
+            addDebugLog("success", "✅ 信息面板已关闭")
+          } catch (e) {
+            addDebugLog("error", `❌ 关闭面板失败: ${e.message}`)
+          }
         }
       },
       onFocus: () => {
+        addDebugLog("info", "📱 用户点击聚焦按钮")
         focusOnModel(pickedObject)
       },
       onHighlight: () => {
+        addDebugLog("info", "📱 用户点击高亮按钮")
         highlightModel(pickedObject)
       }
     })
 
-    // 创建DOM容器
-    const container = document.createElement('div')
-    container.className = 'model-info-container'
-    
     // 挂载Vue组件
     infoApp.mount(container)
+    addDebugLog("success", "✅ Vue组件已挂载到DOM")
 
     // 计算3D位置（在模型上方）
     const worldPosition = new EngineKernel.THREE.Vector3()
     pickedObject.getWorldPosition(worldPosition)
-    worldPosition.y += 10 // 在模型上方10单位
-
-    // 创建CSS3D对象
-    css3dInfoInstance = css3dPlugin.createCSS3DObject(
-      container,
+    
+    // 调整位置，确保在模型上方显示
+    const offsetY = 20 // 向上偏移
+    const finalPosition = [
       worldPosition.x,
-      worldPosition.y,
-      worldPosition.z,
-      {
-        scale: 1,
-        lookAtCamera: true
-      }
-    )
+      worldPosition.y + offsetY,
+      worldPosition.z
+    ]
+    
+    addDebugLog("info", `📍 CSS3D位置: x=${finalPosition[0].toFixed(2)}, y=${finalPosition[1].toFixed(2)}, z=${finalPosition[2].toFixed(2)}`)
 
-    addDebugLog("success", `✅ 显示模型信息: ${modelInfo.name}`)
+    // 使用CSS3D插件的createCSS3DObject方法
+    if (typeof css3dPlugin.createCSS3DObject === 'function') {
+      try {
+        const objectId = css3dPlugin.createCSS3DObject({
+          element: container,
+          position: finalPosition,
+          scale: 1,
+          visible: true,
+          interactive: true
+        })
+        css3dInfoInstance = objectId
+        addDebugLog("success", `✅ CSS3D对象创建成功，ID: ${objectId}`)
+      } catch (e) {
+        addDebugLog("error", `❌ CSS3D对象创建失败: ${e.message}`)
+        // 尝试备用方法
+        useBackupCSS3DMethod(container, finalPosition)
+      }
+    } else {
+      // 使用备用方法
+      useBackupCSS3DMethod(container, finalPosition)
+    }
+
+    addDebugLog("success", `🎉 模型信息面板显示成功: ${modelInfo.name}`)
 
   } catch (error) {
     addDebugLog("error", `❌ 显示模型信息失败: ${error.message}`)
+    console.error('CSS3D显示错误详情:', error)
+  }
+}
+
+// 备用CSS3D对象创建方法
+const useBackupCSS3DMethod = (container, position) => {
+  try {
+    addDebugLog("info", "🔄 尝试备用CSS3D创建方法")
+    
+    // 创建CSS3D对象
+    const css3dObject = new EngineKernel.THREE.CSS3DObject(container)
+    css3dObject.position.set(position[0], position[1], position[2])
+    css3dObject.scale.setScalar(1)
+    
+    // 添加到CSS3D插件的场景中
+    if (typeof css3dPlugin.addObject === 'function') {
+      css3dInfoInstance = css3dPlugin.addObject(css3dObject)
+      addDebugLog("success", "✅ CSS3D对象创建成功（备用方法）")
+    } else {
+      // 最后的备用方法 - 直接添加到主场景
+      const baseScenePlugin = getBaseScenePlugin()
+      if (baseScenePlugin && baseScenePlugin.scene) {
+        baseScenePlugin.scene.add(css3dObject)
+        css3dInfoInstance = css3dObject
+        addDebugLog("success", "✅ CSS3D对象添加到主场景（最后备用方法）")
+      } else {
+        throw new Error('无法找到可用的场景来添加CSS3D对象')
+      }
+    }
+  } catch (error) {
+    addDebugLog("error", `❌ 备用CSS3D方法失败: ${error.message}`)
   }
 }
 
@@ -340,6 +460,10 @@ const loadModelsFromConfig = async () => {
     
     // 获取模型文件配置
     const response = await fetch('/model-files.json')
+    if (!response.ok) {
+      throw new Error(`无法获取模型配置文件: ${response.status}`)
+    }
+    
     const config = await response.json()
     
     if (!config.files || !Array.isArray(config.files)) {
@@ -348,93 +472,178 @@ const loadModelsFromConfig = async () => {
 
     addDebugLog("info", `📋 找到 ${config.files.length} 个模型文件`)
 
+    // 验证模型文件路径
+    const validPaths = []
+    for (const filePath of config.files) {
+      // 修复路径格式
+      const fixedPath = filePath.replace(/\\/g, '/')
+      const fullPath = fixedPath.startsWith('/') ? fixedPath : `/${fixedPath}`
+      
+      addDebugLog("info", `🔍 验证模型路径: ${fullPath}`)
+      
+      // 简单的路径验证
+      if (fullPath.includes('.gltf') || fullPath.includes('.glb')) {
+        validPaths.push(fullPath)
+      } else {
+        addDebugLog("warning", `⚠️ 跳过无效路径: ${fullPath}`)
+      }
+    }
+
+    if (validPaths.length === 0) {
+      throw new Error('没有找到有效的模型文件路径')
+    }
+
+    addDebugLog("info", `✅ 验证通过，准备加载 ${validPaths.length} 个模型`)
+
+    // 可选：检查文件是否存在（仅作为调试信息）
+    for (let i = 0; i < Math.min(validPaths.length, 3); i++) {
+      try {
+        const testResponse = await fetch(validPaths[i], { method: 'HEAD' })
+        addDebugLog("info", `🔍 文件检查 ${validPaths[i]}: ${testResponse.ok ? '存在' : '不存在'}`)
+      } catch (error) {
+        addDebugLog("warning", `⚠️ 无法检查文件: ${validPaths[i]}`)
+      }
+    }
+
     // 批量加载模型
-    const models = await loadBatchModels(config.files, addDebugLog)
+    const models = await loadBatchModels(validPaths, addDebugLog)
     loadedModels.value = models
 
-    addDebugLog("success", `🎉 批量加载完成，成功加载 ${models.length} 个模型`)
+    const successCount = models.filter(m => m !== null).length
+    addDebugLog("success", `🎉 批量加载完成！成功: ${successCount}/${validPaths.length}`)
+
+    if (successCount === 0) {
+      addDebugLog("error", "❌ 所有模型加载都失败了，请检查模型文件是否存在")
+    }
 
   } catch (error) {
     addDebugLog("error", `❌ 批量加载模型失败: ${error.message}`)
-  }
-}
-
-// 生成随机路径点
-const generateRandomPath = () => {
-  const points = []
-  const numPoints = 8 + Math.floor(Math.random() * 8) // 8-15个点
-  
-  for (let i = 0; i < numPoints; i++) {
-    const angle = (i / numPoints) * Math.PI * 2 + Math.random() * 0.5
-    const radius = 80 + Math.random() * 120 // 80-200的随机半径
-    const x = Math.cos(angle) * radius
-    const z = Math.sin(angle) * radius
-    const y = 5 + Math.random() * 15 // 5-20的高度变化
     
-    points.push(new EngineKernel.THREE.Vector3(x, y, z))
+    // 如果批量加载失败，尝试加载一些测试几何体作为替代
+    addDebugLog("info", "🔄 尝试创建替代几何体...")
+    createFallbackGeometry()
   }
-  
-  // 闭合路径
-  points.push(points[0].clone())
-  
-  return points
 }
 
-// 创建路径可视化
-const createPathVisualization = (points) => {
+// 生成随机目标点
+const generateRandomTarget = () => {
+  const angle = Math.random() * Math.PI * 2 // 随机角度
+  const radius = 50 + Math.random() * 100 // 50-150的随机半径
+  const x = Math.cos(angle) * radius
+  const z = Math.sin(angle) * radius
+  const y = 2 + Math.random() * 8 // 2-10的高度变化
+  
+  return new EngineKernel.THREE.Vector3(x, y, z)
+}
+
+// 更新轨迹线可视化
+const updateTrajectoryVisualization = () => {
   const baseScenePlugin = getBaseScenePlugin()
-  if (!baseScenePlugin) return
+  if (!baseScenePlugin || trajectoryPoints.length < 2) return
 
-  // 移除之前的路径线
-  const existingPath = baseScenePlugin.scene.getObjectByName('HorsePath')
-  if (existingPath) {
-    baseScenePlugin.scene.remove(existingPath)
+  try {
+    // 移除之前的轨迹线
+    if (trajectoryLine) {
+      baseScenePlugin.scene.remove(trajectoryLine)
+      trajectoryLine = null
+    }
+
+    // 创建轨迹线几何体
+    const geometry = new EngineKernel.THREE.BufferGeometry().setFromPoints(trajectoryPoints)
+    const material = new EngineKernel.THREE.LineBasicMaterial({ 
+      color: 0x00ff00,
+      linewidth: 3,
+      transparent: true,
+      opacity: 0.8
+    })
+    
+    trajectoryLine = new EngineKernel.THREE.Line(geometry, material)
+    trajectoryLine.name = 'HorseTrajectory'
+    baseScenePlugin.scene.add(trajectoryLine)
+    
+  } catch (error) {
+    addDebugLog("error", `❌ 更新轨迹线失败: ${error.message}`)
   }
-
-  // 创建路径曲线
-  const curve = new EngineKernel.THREE.CatmullRomCurve3(points)
-  const pathGeometry = new EngineKernel.THREE.TubeGeometry(curve, 200, 0.5, 8, false)
-  const pathMaterial = new EngineKernel.THREE.MeshBasicMaterial({ 
-    color: 0x00ff00,
-    transparent: true,
-    opacity: 0.6
-  })
-  
-  const pathMesh = new EngineKernel.THREE.Mesh(pathGeometry, pathMaterial)
-  pathMesh.name = 'HorsePath'
-  baseScenePlugin.scene.add(pathMesh)
-  
-  return curve
 }
 
-// 马模型路径动画
+// 添加轨迹点
+const addTrajectoryPoint = (position) => {
+  trajectoryPoints.push(position.clone())
+  
+  // 限制轨迹点数量，避免内存泄露
+  const maxPoints = 5000 // 增加轨迹点数量，让轨迹更长
+  if (trajectoryPoints.length > maxPoints) {
+    trajectoryPoints.shift() // 移除最老的点
+  }
+  
+  // 每隔几个点更新一次轨迹线（性能优化）
+  if (trajectoryPoints.length % 5 === 0 || trajectoryPoints.length < 10) {
+    updateTrajectoryVisualization()
+  }
+}
+
+// 清除轨迹线
+const clearTrajectory = () => {
+  trajectoryPoints = []
+  const baseScenePlugin = getBaseScenePlugin()
+  if (baseScenePlugin && trajectoryLine) {
+    baseScenePlugin.scene.remove(trajectoryLine)
+    trajectoryLine = null
+  }
+}
+
+// 马模型目标点移动动画
 const animateHorse = () => {
-  if (!horseModel.value || !pathPoints.length) return
+  if (!horseModel.value) return
 
   const animate = () => {
     if (!isAnimating.value) return
 
-    // 更新路径进度
-    pathProgress += animationSpeed
-    if (pathProgress >= 1) {
-      // 生成新的随机路径
-      pathPoints = generateRandomPath()
-      const curve = createPathVisualization(pathPoints)
-      pathProgress = 0
-      addDebugLog("info", "🐎 马模型开始新的路径")
+    const currentTime = Date.now()
+    
+    // 如果没有目标点或已到达目标点，生成新目标
+    if (!currentTarget || (currentTime - moveStartTime) >= moveDuration) {
+      // 每次生成新目标时，将当前位置设置为模型的实际位置
+      currentPosition = horseModel.value.position.clone()
+      
+      // 生成新的随机目标点
+      currentTarget = generateRandomTarget()
+      moveStartTime = currentTime
+      moveDuration = 3000 + Math.random() * 4000 // 3-7秒随机移动时间
+      
+      addDebugLog("info", `🐎 马模型从 (${currentPosition.x.toFixed(1)}, ${currentPosition.y.toFixed(1)}, ${currentPosition.z.toFixed(1)}) 前往新目标: (${currentTarget.x.toFixed(1)}, ${currentTarget.y.toFixed(1)}, ${currentTarget.z.toFixed(1)})`)
     }
 
-    // 获取当前位置和方向
-    const curve = new EngineKernel.THREE.CatmullRomCurve3(pathPoints)
-    const position = curve.getPoint(pathProgress)
-    const tangent = curve.getTangent(pathProgress)
-
-    // 更新马模型位置
-    horseModel.value.position.copy(position)
+    // 计算移动进度 (0 到 1)
+    const progress = Math.min((currentTime - moveStartTime) / moveDuration, 1)
     
-    // 让马模型面向前进方向
-    const lookAtPosition = position.clone().add(tangent)
-    horseModel.value.lookAt(lookAtPosition)
+    // 使用缓动函数让移动更自然 (easeInOutQuad)
+    const easeProgress = progress < 0.5 
+      ? 2 * progress * progress 
+      : 1 - Math.pow(-2 * progress + 2, 2) / 2
+
+    // 计算当前位置 (从currentPosition到currentTarget的插值)
+    const newPosition = new EngineKernel.THREE.Vector3()
+    newPosition.lerpVectors(currentPosition, currentTarget, easeProgress)
+    
+    // 更新马模型位置
+    horseModel.value.position.copy(newPosition)
+    
+    // 让马模型面向目标方向
+    const direction = currentTarget.clone().sub(currentPosition).normalize()
+    if (direction.length() > 0.01) { // 避免方向为零向量
+      const lookAtPosition = newPosition.clone().add(direction)
+      horseModel.value.lookAt(lookAtPosition)
+    }
+    
+    // 添加轨迹点（每帧都添加，确保轨迹连续）
+    addTrajectoryPoint(newPosition)
+    
+    // 如果达到目标点，记录日志但不在这里更新currentPosition
+    // currentPosition会在生成新目标时更新
+    if (progress >= 1) {
+      addDebugLog("success", "🎯 马模型已到达目标点，准备前往下一个目标")
+    }
 
     animationId = requestAnimationFrame(animate)
   }
@@ -449,14 +658,22 @@ const startHorseAnimation = () => {
     return
   }
 
-  // 生成初始路径
-  pathPoints = generateRandomPath()
-  createPathVisualization(pathPoints)
+  // 初始化位置和目标
+  currentPosition = horseModel.value.position.clone()
+  currentTarget = null // 让动画函数生成第一个目标
+  
+  // 如果是第一次启动，清空轨迹点；否则保持现有轨迹
+  if (trajectoryPoints.length === 0) {
+    trajectoryPoints = []
+    addDebugLog("info", "🎬 初始化新的轨迹记录")
+  } else {
+    addDebugLog("info", "🎬 继续在现有轨迹基础上移动")
+  }
   
   isAnimating.value = true
   animateHorse()
   
-  addDebugLog("success", "🎬 马模型路径动画已开始")
+  addDebugLog("success", "🎬 马模型目标点移动动画已开始")
 }
 
 // 停止马模型动画
@@ -467,7 +684,183 @@ const stopHorseAnimation = () => {
     animationId = null
   }
   
-  addDebugLog("info", "⏹️ 马模型路径动画已停止")
+  // 清除轨迹线
+  clearTrajectory()
+  
+  addDebugLog("info", "⏹️ 马模型目标点移动动画已停止")
+}
+
+// 测试CSS3D显示功能
+const testCSS3DDisplay = () => {
+  if (!css3dPlugin) {
+    addDebugLog("error", "❌ CSS3D插件未初始化")
+    return
+  }
+  
+  addDebugLog("info", "🧪 开始测试CSS3D显示功能")
+  
+  try {
+    // 获取模型信息
+    const modelInfo = {
+      name: "测试CSS3D对象",
+      type: "TestObject",
+      uuid: "test-css3d-uuid",
+      position: { x: 0, y: 0, z: 0 },
+      geometry: "TestGeometry",
+      material: "TestMaterial",
+      vertices: 1000,
+      triangles: 500
+    }
+    
+    // 创建DOM容器
+    const container = document.createElement('div')
+    container.className = 'model-info-container'
+    container.style.cssText = `
+      position: relative;
+      pointer-events: auto;
+      z-index: 1;
+      transform-style: preserve-3d;
+      background: transparent;
+    `
+    
+    // 创建Vue应用实例
+    const infoApp = createApp(ModelMessage, {
+      modelInfo: modelInfo,
+      onClose: () => {
+        addDebugLog("info", "🧪 测试面板关闭")
+        if (css3dInfoInstance && css3dPlugin) {
+          try {
+            if (typeof css3dPlugin.removeObject === 'function') {
+              css3dPlugin.removeObject(css3dInfoInstance)
+            } else if (typeof css3dPlugin.remove3DObject === 'function') {
+              css3dPlugin.remove3DObject(css3dInfoInstance)
+            }
+            css3dInfoInstance = null
+          } catch (e) {
+            addDebugLog("error", `❌ 测试面板清理失败: ${e.message}`)
+          }
+        }
+      },
+      onFocus: () => {
+        addDebugLog("info", "🧪 测试聚焦功能")
+      },
+      onHighlight: () => {
+        addDebugLog("info", "🧪 测试高亮功能") 
+      }
+    })
+
+    // 挂载Vue组件
+    infoApp.mount(container)
+    
+    // 设置测试位置（相机前方）
+    const baseScenePlugin = getBaseScenePlugin()
+    if (baseScenePlugin && baseScenePlugin.camera) {
+      const camera = baseScenePlugin.camera
+      const direction = new EngineKernel.THREE.Vector3(0, 0, -1)
+      direction.applyQuaternion(camera.quaternion)
+      
+      const testPosition = camera.position.clone().add(direction.multiplyScalar(30))
+      
+      addDebugLog("info", `🧪 测试位置: (${testPosition.x.toFixed(1)}, ${testPosition.y.toFixed(1)}, ${testPosition.z.toFixed(1)})`)
+      
+      // 创建CSS3D对象
+      if (typeof css3dPlugin.createCSS3DObject === 'function') {
+        try {
+          const objectId = css3dPlugin.createCSS3DObject({
+            element: container,
+            position: [testPosition.x, testPosition.y, testPosition.z],
+            scale: 1,
+            visible: true,
+            interactive: true
+          })
+          css3dInfoInstance = objectId
+          addDebugLog("success", `✅ CSS3D测试对象创建成功，ID: ${objectId}`)
+        } catch (e) {
+          addDebugLog("error", `❌ CSS3D测试对象创建失败: ${e.message}`)
+          // 使用备用方法
+          useBackupCSS3DMethod(container, [testPosition.x, testPosition.y, testPosition.z])
+        }
+      } else {
+        addDebugLog("warning", "⚠️ createCSS3DObject方法不可用，使用备用方法")
+        useBackupCSS3DMethod(container, [testPosition.x, testPosition.y, testPosition.z])
+      }
+    }
+    
+  } catch (error) {
+    addDebugLog("error", `❌ CSS3D测试失败: ${error.message}`)
+    console.error('CSS3D测试错误:', error)
+  }
+}
+
+// 创建替代几何体（当模型加载失败时）
+const createFallbackGeometry = () => {
+  const baseScenePlugin = getBaseScenePlugin()
+  if (!baseScenePlugin) return
+
+  try {
+    addDebugLog("info", "📦 开始创建替代几何体...")
+    
+    const fallbackModels = []
+    const scene = baseScenePlugin.scene
+    
+    // 创建不同的几何体替代模型
+    const geometries = [
+      { geo: new EngineKernel.THREE.BoxGeometry(2, 2, 2), name: '立方体_01', color: 0xff6b6b },
+      { geo: new EngineKernel.THREE.SphereGeometry(1, 16, 16), name: '球体_02', color: 0x4ecdc4 },
+      { geo: new EngineKernel.THREE.CylinderGeometry(1, 1, 2, 16), name: '圆柱体_03', color: 0x45b7d1 },
+      { geo: new EngineKernel.THREE.ConeGeometry(1, 2, 16), name: '圆锥体_04', color: 0xf39c12 },
+      { geo: new EngineKernel.THREE.TorusGeometry(1, 0.4, 8, 16), name: '环形体_05', color: 0xe74c3c },
+      { geo: new EngineKernel.THREE.OctahedronGeometry(1.5), name: '八面体_06', color: 0x9b59b6 },
+      { geo: new EngineKernel.THREE.TetrahedronGeometry(1.5), name: '四面体_07', color: 0x1abc9c },
+      { geo: new EngineKernel.THREE.IcosahedronGeometry(1.2), name: '二十面体_08', color: 0xe67e22 },
+      { geo: new EngineKernel.THREE.DodecahedronGeometry(1.2), name: '十二面体_09', color: 0x34495e },
+      { geo: new EngineKernel.THREE.TorusKnotGeometry(1, 0.3, 64, 8), name: '环结_10', color: 0x8e44ad }
+    ]
+    
+    geometries.forEach((item, index) => {
+      // 创建材质
+      const material = new EngineKernel.THREE.MeshPhongMaterial({ 
+        color: item.color,
+        shininess: 100,
+        specular: 0x222222
+      })
+      
+      const mesh = new EngineKernel.THREE.Mesh(item.geo, material)
+      
+      // 设置位置（圆形分布）
+      const angle = (index / geometries.length) * Math.PI * 2
+      const radius = 20 + Math.random() * 40 // 20-60 的随机半径
+      const x = Math.cos(angle) * radius + (Math.random() - 0.5) * 10
+      const z = Math.sin(angle) * radius + (Math.random() - 0.5) * 10
+      const y = Math.random() * 5 // 0-5 的随机高度
+
+      mesh.position.set(x, y, z)
+      
+      // 随机旋转
+      mesh.rotation.x = Math.random() * Math.PI * 2
+      mesh.rotation.y = Math.random() * Math.PI * 2
+      mesh.rotation.z = Math.random() * Math.PI * 2
+      
+      // 设置名称
+      mesh.name = item.name
+      mesh.userData = {
+        type: 'fallback_geometry',
+        originalIndex: index + 1
+      }
+      
+      // 添加到场景
+      scene.add(mesh)
+      fallbackModels.push(mesh)
+    })
+    
+    // 更新加载的模型列表
+    loadedModels.value = fallbackModels
+    
+    addDebugLog("success", `✅ 已创建 ${geometries.length} 个替代几何体`)
+    
+  } catch (error) {
+    addDebugLog("error", `❌ 创建替代几何体失败: ${error.message}`)
+  }
 }
 
 // 主初始化流程
@@ -492,15 +885,47 @@ const initializeApplication = async () => {
       })
     }
     
-    await waitForReady()
-    addDebugLog("success", "✅ 引擎已就绪")
+         await waitForReady()
+     addDebugLog("success", "✅ 引擎已就绪")
+     
+     // 确保轨道控制器正常工作
+     const orbitControlPlugin = getOrbitControlPlugin()
+     if (orbitControlPlugin) {
+       addDebugLog("success", "🎮 轨道控制器已激活")
+       
+       // 检查Canvas事件绑定
+       const baseScenePlugin = getBaseScenePlugin()
+       if (baseScenePlugin && baseScenePlugin.rendererInstance) {
+         const canvas = baseScenePlugin.rendererInstance.domElement
+         if (canvas) {
+           addDebugLog("success", `✅ Canvas元素已找到: ${canvas.tagName}`)
+           
+           // 确保Canvas样式正确
+           canvas.style.pointerEvents = 'auto'
+           canvas.style.zIndex = '1'
+           canvas.style.position = 'relative'
+           
+           // 测试事件监听
+           canvas.addEventListener('mousedown', () => {
+             addDebugLog("info", "🖱️ Canvas鼠标按下事件已触发")
+           }, { once: true })
+         }
+       }
+     } else {
+       addDebugLog("error", "❌ 轨道控制器未找到")
+     }
+     
+     // 2. 创建场景辅助对象
+     createSceneHelpers(addDebugLog)
     
-    // 2. 创建场景辅助对象
-    createSceneHelpers(addDebugLog)
-    
-    // 3. 初始化插件
-    await initializeMousePick()
-    await initializeCSS3D()
+         // 3. 初始化插件
+     await initializeMousePick()
+     await initializeCSS3D()
+     
+     // 延迟测试CSS3D功能
+     setTimeout(() => {
+       addDebugLog("info", "💡 提示：按C键测试CSS3D显示功能")
+     }, 3000)
     
     // 4. 批量加载模型
     await loadModelsFromConfig()
@@ -514,16 +939,82 @@ const initializeApplication = async () => {
       }, 1000)
     }
     
-    addDebugLog("success", "🎉 3D场景应用初始化完成")
+         addDebugLog("success", "🎉 3D场景应用初始化完成")
+     
+            // 检查UI层级设置
+       setTimeout(() => {
+         const navButton = document.querySelector('.nav-toggle-mini')
+         if (navButton) {
+           const styles = window.getComputedStyle(navButton)
+           addDebugLog("info", `🎯 导航按钮层级检查: z-index=${styles.zIndex}, pointer-events=${styles.pointerEvents}`)
+         }
+         
+         const sceneContainer = document.querySelector('.engine-scene-container')
+         if (sceneContainer) {
+           const styles = window.getComputedStyle(sceneContainer)
+           addDebugLog("info", `🎬 场景容器层级检查: z-index=${styles.zIndex}`)
+         }
+         
+         // 显示快捷键提示
+         addDebugLog("info", "⌨️ 快捷键提示: R=重置相机, H=隐藏面板, T=测试控制器, C=测试CSS3D, X=清除轨迹")
+       }, 2000)
     
   } catch (error) {
     addDebugLog("error", `❌ 应用初始化失败: ${error.message}`)
   }
 }
 
+// 添加键盘快捷键支持
+const setupKeyboardControls = () => {
+  const handleKeyPress = (event) => {
+    switch (event.key.toLowerCase()) {
+      case 'r':
+        // R键重置相机
+        resetCamera(addDebugLog)
+        addDebugLog("info", "🎯 快捷键R: 相机已重置")
+        break
+      case 'h':
+        // H键隐藏/显示信息面板
+        if (css3dInfoInstance && css3dPlugin) {
+          css3dPlugin.remove3DObject(css3dInfoInstance)
+          css3dInfoInstance = null
+          addDebugLog("info", "👁️ 快捷键H: 隐藏信息面板")
+        }
+        break
+              case 't':
+        // T键测试控制器
+        const orbitControlPlugin = getOrbitControlPlugin()
+        if (orbitControlPlugin) {
+          addDebugLog("info", `🎮 快捷键T: 控制器状态 enabled=${orbitControlPlugin.enabled}`)
+        }
+        break
+      case 'c':
+        // C键测试CSS3D
+        testCSS3DDisplay()
+        break
+      case 'x':
+        // X键清除轨迹线
+        clearTrajectory()
+        addDebugLog("info", "🧹 快捷键X: 轨迹线已清除")
+        break
+    }
+  }
+
+  document.addEventListener('keydown', handleKeyPress)
+  
+  return () => {
+    document.removeEventListener('keydown', handleKeyPress)
+  }
+}
+
 // 组件挂载
 onMounted(() => {
   initializeApplication()
+  // 设置键盘控制
+  const keyboardCleanup = setupKeyboardControls()
+  
+  // 保存清理函数
+  window.engineKeyboardCleanup = keyboardCleanup
 })
 
 // 组件卸载
@@ -537,6 +1028,12 @@ onUnmounted(() => {
   // 清理CSS3D信息面板
   if (css3dInfoInstance && css3dPlugin) {
     css3dPlugin.remove3DObject(css3dInfoInstance)
+  }
+  
+  // 清理键盘事件监听器
+  if (window.engineKeyboardCleanup) {
+    window.engineKeyboardCleanup()
+    delete window.engineKeyboardCleanup
   }
   
   // 清理引擎资源
@@ -558,12 +1055,23 @@ onUnmounted(() => {
   margin: 0;
   padding: 0;
   background: #000;
+  z-index: 0; /* 确保3D场景在最底层，不影响App.vue的导航 */
 }
 
 .canvas-container {
   width: 100%;
   height: 100%;
   position: relative;
+  z-index: 1; /* Canvas容器层级 */
+}
+
+.canvas-container canvas {
+  display: block !important;
+  cursor: pointer !important;
+  pointer-events: auto !important; /* 确保Canvas接收鼠标事件 */
+  position: relative !important;
+  z-index: 1 !important; /* Canvas在场景容器内的层级 */
+  outline: none; /* 移除焦点边框 */
 }
 
 .css3d-container {
@@ -572,18 +1080,37 @@ onUnmounted(() => {
   left: 0;
   width: 100%;
   height: 100%;
-  pointer-events: none;
-  z-index: 1000;
+  pointer-events: none !important; /* CSS3D容器不接收事件 */
+  z-index: 999; /* 在Canvas之上，确保CSS3D对象可见 */
+  overflow: hidden; /* 防止内容溢出 */
 }
 
 .model-info-container {
-  pointer-events: auto;
+  pointer-events: auto !important; /* 只有信息卡片可以接收事件 */
+  position: relative;
+  z-index: 1; /* 信息卡片在CSS3D容器内的层级 */
+  background: transparent; /* 确保背景透明 */
+  transform-style: preserve-3d; /* 保持3D变换 */
 }
 
-/* 确保Canvas能正确接收鼠标事件 */
-.canvas-container canvas {
-  display: block;
-  cursor: pointer;
+/* CSS3D渲染器全局样式 */
+:global(.css3d-renderer-layer) {
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none !important;
+  z-index: 999 !important;
+  overflow: hidden !important;
+}
+
+/* CSS3D对象内的模型信息卡片样式增强 */
+:global(.css3d-renderer-layer .model-info-container) {
+  pointer-events: auto !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  display: block !important;
 }
 </style>
 

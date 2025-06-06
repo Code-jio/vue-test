@@ -344,11 +344,15 @@ export function useEngine(options = {}) {
       
       const loadPromises = modelFiles.map(async (modelPath, index) => {
         try {
-          addDebugLog("info", `🔄 正在加载模型 ${index + 1}: ${modelPath}`);
+          // 修复路径格式：替换反斜杠为正斜杠，并确保路径格式正确
+          const fixedPath = modelPath.replace(/\\/g, '/');
+          const fullPath = fixedPath.startsWith('/') ? fixedPath : `/${fixedPath}`;
+          
+          addDebugLog("info", `🔄 正在加载模型 ${index + 1}: ${fullPath}`);
           
           // 加载模型
           const model = await resourcePlugin.loadModelAsync(
-            modelPath,
+            fullPath,
             EngineKernel.TaskPriority.MEDIUM,
             {
               timeout: 30000,
@@ -357,17 +361,17 @@ export function useEngine(options = {}) {
             }
           );
 
-          // 设置模型位置（在一个圆形区域内随机分布）
-          const angle = (index / modelFiles.length) * Math.PI * 2;
-          const radius = 50 + Math.random() * 100; // 50-150 的随机半径
-          const x = Math.cos(angle) * radius + (Math.random() - 0.5) * 20;
-          const z = Math.sin(angle) * radius + (Math.random() - 0.5) * 20;
-          const y = Math.random() * 10; // 0-10 的随机高度
+          // // 设置模型位置（在一个圆形区域内随机分布）
+          // const angle = (index / modelFiles.length) * Math.PI * 2;
+          // const radius = 50 + Math.random() * 100; // 50-150 的随机半径
+          // const x = Math.cos(angle) * radius + (Math.random() - 0.5) * 20;
+          // const z = Math.sin(angle) * radius + (Math.random() - 0.5) * 20;
+          // const y = Math.random() * 10; // 0-10 的随机高度
 
-          model.position.set(x, y, z);
+          // model.position.set(x, y, z);
           
-          // 随机旋转
-          model.rotation.y = Math.random() * Math.PI * 2;
+          // // 随机旋转
+          // model.rotation.y = Math.random() * Math.PI * 2;
           
           // 设置模型名称
           model.name = `Model_${index + 1}_${modelPath.split('/').pop().split('.')[0]}`;
@@ -379,7 +383,15 @@ export function useEngine(options = {}) {
           return model;
           
         } catch (error) {
-          addDebugLog("error", `❌ 模型 ${index + 1} 加载失败: ${error.message}`);
+          addDebugLog("error", `❌ 模型 ${index + 1} (${fullPath}) 加载失败: ${error.message}`);
+          
+          // 检查是否是路径问题
+          if (error.message.includes('404') || error.message.includes('Not Found')) {
+            addDebugLog("warning", `⚠️ 文件不存在: ${fullPath}`);
+          } else if (error.message.includes('RangeError') || error.message.includes('Invalid typed array')) {
+            addDebugLog("warning", `⚠️ 文件格式问题: ${fullPath}`);
+          }
+          
           return null;
         }
       });
@@ -395,6 +407,7 @@ export function useEngine(options = {}) {
       });
 
       addDebugLog("success", `🎉 批量加载完成！成功加载 ${loadedModels.length}/${modelFiles.length} 个模型`);
+      console.timeEnd("场景初始化")
       return loadedModels;
 
     } catch (error) {
@@ -426,6 +439,7 @@ export function useEngine(options = {}) {
 
       // 设置马模型的初始位置
       horseModel.position.set(0, 0, 0);
+      horseModel.scale.set(0.1, 0.1, 0.1);
       horseModel.name = "AnimatedHorse";
       
       // 调整模型材质
