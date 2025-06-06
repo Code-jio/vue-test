@@ -1,165 +1,9 @@
 {
   "asset": {
-    "generator": "glTF-Transform v3.10.1",
-    "version": "2.0"
+    "version": "2.0",
+    "generator": "babylon.js glTF exporter for 3dsmax 2023 v20240312.5"
   },
-  "accessors": [
-    {
-      "type": "SCALAR",
-      "componentType": 5123,
-      "count": 74355
-    },
-    {
-      "name": "accessorPositions",
-      "type": "VEC3",
-      "componentType": 5126,
-      "count": 37483,
-      "max": [
-        151.218505859375,
-        84.19390869140625,
-        328.45977783203125
-      ],
-      "min": [
-        -130.80462646484375,
-        0,
-        -113.14617919921875
-      ]
-    },
-    {
-      "name": "accessorNormals",
-      "type": "VEC3",
-      "componentType": 5126,
-      "count": 37483
-    },
-    {
-      "type": "SCALAR",
-      "componentType": 5123,
-      "count": 4641
-    },
-    {
-      "name": "accessorPositions",
-      "type": "VEC3",
-      "componentType": 5126,
-      "count": 2479,
-      "max": [
-        150.98095703125,
-        82.57273864746094,
-        325.3825378417969
-      ],
-      "min": [
-        -130.669677734375,
-        0.00646209716796875,
-        -110.726806640625
-      ]
-    },
-    {
-      "name": "accessorNormals",
-      "type": "VEC3",
-      "componentType": 5126,
-      "count": 2479
-    }
-  ],
-  "bufferViews": [
-    {
-      "buffer": 0,
-      "byteOffset": 0,
-      "byteLength": 71521
-    },
-    {
-      "buffer": 0,
-      "byteOffset": 71521,
-      "byteLength": 6451
-    }
-  ],
-  "buffers": [
-    {
-      "name": "对象353",
-      "uri": "对象353.bin",
-      "byteLength": 77972
-    }
-  ],
-  "materials": [
-    {
-      "name": "Material #2097628385",
-      "pbrMetallicRoughness": {
-        "baseColorFactor": [
-          0.7058824,
-          0.7058824,
-          0.7058824,
-          1
-        ],
-        "roughnessFactor": 0.450053632,
-        "metallicFactor": 0
-      }
-    },
-    {
-      "name": "Material #2097628123",
-      "pbrMetallicRoughness": {
-        "baseColorFactor": [
-          0.215686291,
-          0.286274523,
-          0.3137255,
-          1
-        ],
-        "roughnessFactor": 0.300539136,
-        "metallicFactor": 0
-      }
-    }
-  ],
-  "meshes": [
-    {
-      "name": "对象353",
-      "primitives": [
-        {
-          "attributes": {
-            "POSITION": 1,
-            "NORMAL": 2
-          },
-          "mode": 4,
-          "material": 0,
-          "indices": 0,
-          "extensions": {
-            "KHR_draco_mesh_compression": {
-              "bufferView": 0,
-              "attributes": {
-                "POSITION": 0,
-                "NORMAL": 1
-              }
-            }
-          }
-        },
-        {
-          "attributes": {
-            "POSITION": 4,
-            "NORMAL": 5
-          },
-          "mode": 4,
-          "material": 1,
-          "indices": 3,
-          "extensions": {
-            "KHR_draco_mesh_compression": {
-              "bufferView": 1,
-              "attributes": {
-                "POSITION": 0,
-                "NORMAL": 1
-              }
-            }
-          }
-        }
-      ]
-    }
-  ],
-  "nodes": [
-    {
-      "name": "对象353",
-      "translation": [
-        2503.00586,
-        29.2688522,
-        -1238.32532
-      ],
-      "mesh": 0
-    }
-  ],
+  "scene": 0,
   "scenes": [
     {
       "nodes": [
@@ -167,11 +11,178 @@
       ]
     }
   ],
-  "scene": 0,
-  "extensionsUsed": [
-    "KHR_draco_mesh_compression"
+  "nodes": [
+    {
+      "mesh": 0,
+      "translation": [
+        2503.00586,
+        29.2688522,
+        -1238.32532
+      ],
+      "name": "对象353"
+    }
   ],
-  "extensionsRequired": [
-    "KHR_draco_mesh_compression"
+  "meshes": [
+    {
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "indices": 0,
+          "material": 0
+        },
+        {
+          "attributes": {
+            "POSITION": 5,
+            "NORMAL": 6,
+            "TEXCOORD_0": 7
+          },
+          "indices": 4,
+          "material": 1
+        }
+      ],
+      "name": "对象353"
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5123,
+      "count": 90234,
+      "type": "SCALAR",
+      "name": "accessorIndices"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 46395,
+      "max": [
+        151.2185,
+        84.19391,
+        328.459778
+      ],
+      "min": [
+        -130.804626,
+        0.0,
+        -113.146179
+      ],
+      "type": "VEC3",
+      "name": "accessorPositions"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 556740,
+      "componentType": 5126,
+      "count": 46395,
+      "type": "VEC3",
+      "name": "accessorNormals"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 46395,
+      "type": "VEC2",
+      "name": "accessorUVs"
+    },
+    {
+      "bufferView": 0,
+      "byteOffset": 180468,
+      "componentType": 5123,
+      "count": 6207,
+      "type": "SCALAR",
+      "name": "accessorIndices"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 1113480,
+      "componentType": 5126,
+      "count": 3139,
+      "max": [
+        150.980957,
+        82.57274,
+        325.382538
+      ],
+      "min": [
+        -130.669678,
+        0.006462097,
+        -110.726807
+      ],
+      "type": "VEC3",
+      "name": "accessorPositions"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 1151148,
+      "componentType": 5126,
+      "count": 3139,
+      "type": "VEC3",
+      "name": "accessorNormals"
+    },
+    {
+      "bufferView": 2,
+      "byteOffset": 371160,
+      "componentType": 5126,
+      "count": 3139,
+      "type": "VEC2",
+      "name": "accessorUVs"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 192884,
+      "name": "bufferViewScalar"
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 192884,
+      "byteLength": 1188816,
+      "byteStride": 12,
+      "name": "bufferViewFloatVec3"
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1381700,
+      "byteLength": 396272,
+      "byteStride": 8,
+      "name": "bufferViewFloatVec2"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "13.bin",
+      "byteLength": 1777972
+    }
+  ],
+  "materials": [
+    {
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.7058824,
+          0.7058824,
+          0.7058824,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.450053632
+      },
+      "name": "Material #2097628385"
+    },
+    {
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.215686291,
+          0.286274523,
+          0.3137255,
+          1.0
+        ],
+        "metallicFactor": 0.0,
+        "roughnessFactor": 0.300539136
+      },
+      "name": "Material #2097628123"
+    }
   ]
 }

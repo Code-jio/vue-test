@@ -1,25 +1,25 @@
-import { ref, nextTick } from 'vue'
+import { ref, nextTick } from "vue";
 
 // 引擎核心功能管理
 export function useEngine(options = {}) {
   // 响应式状态
-  const engineReady = ref(false)
-  const initStatus = ref("准备中...")
-  
+  const engineReady = ref(false);
+  const initStatus = ref("准备中...");
+
   // 引擎实例存储
-  let engineInstance = null
-  let baseScenePlugin = null
-  let orbitControlPlugin = null
-  let modelMarker = null
+  let engineInstance = null;
+  let baseScenePlugin = null;
+  let orbitControlPlugin = null;
+  let modelMarker = null;
 
   // 初始化三维引擎
   const initializeEngine = async (addDebugLog, customSkyBoxConfig = null) => {
     try {
-      initStatus.value = "初始化中..."
-      addDebugLog("info", "🚀 开始初始化EngineKernel")
+      initStatus.value = "初始化中...";
+      addDebugLog("info", "🚀 开始初始化EngineKernel");
 
       // 确保DOM已经渲染
-      await nextTick()
+      await nextTick();
 
       // 创建引擎实例
       engineInstance = new EngineKernel.BaseCore({
@@ -44,17 +44,32 @@ export function useEngine(options = {}) {
               },
               debugConfig: {
                 enabled: true,
-                gridHelper: true,
-                axesHelper: true,
+                gridHelper: false,
+                axesHelper: false,
+              },
+              floorConfig: {
+                enabled: true,
+                type: "water",
+                size: 100000,
+                position: [0, 0, 0],
+                waterConfig: {
+                  color: 0x001e0f,
+                  sunColor: 0xffffff,
+                  distortionScale: 3.7,
+                  textureWidth: 512,
+                  textureHeight: 512,
+                  alpha: 1.0,
+                  time: 0
+                }
               },
             },
           },
         ],
-      })
+      });
 
       // 获取基础场景插件
-      baseScenePlugin = engineInstance.getPlugin("BaseScene")
-      
+      baseScenePlugin = engineInstance.getPlugin("BaseScene");
+      console.log(baseScenePlugin);
       // 注册需要依赖场景的插件
       engineInstance.register({
         name: "RenderLoopPlugin",
@@ -63,34 +78,38 @@ export function useEngine(options = {}) {
         userData: {
           scene: baseScenePlugin.scene,
         },
-      })
+      });
 
       // 确保渲染器尺寸正确
       if (baseScenePlugin && baseScenePlugin.renderer) {
-        baseScenePlugin.renderer.setSize(window.innerWidth, window.innerHeight)
+        baseScenePlugin.renderer.setSize(window.innerWidth, window.innerHeight);
         baseScenePlugin.renderer.setPixelRatio(
           Math.min(window.devicePixelRatio, 2)
-        )
+        );
       }
 
-      addDebugLog("success", "✅ 基础场景插件加载完成")
+      addDebugLog("success", "✅ 基础场景插件加载完成");
 
       // 注册其他插件（包含天空盒配置）
-      registerAdditionalPlugins(addDebugLog, customSkyBoxConfig)
+      registerAdditionalPlugins(addDebugLog, customSkyBoxConfig);
 
       // 监听初始化完成事件
-      engineInstance.on("init-complete", () => onEngineInitComplete(addDebugLog))
-      addDebugLog("success", "🎉 引擎核心初始化完成")
-      
+      engineInstance.on("init-complete", () =>
+        onEngineInitComplete(addDebugLog)
+      );
+      addDebugLog("success", "🎉 引擎核心初始化完成");
     } catch (error) {
-      initStatus.value = "初始化失败"
-      addDebugLog("error", `❌ 引擎初始化失败: ${error.message}`)
-      console.error("引擎初始化失败:", error)
+      initStatus.value = "初始化失败";
+      addDebugLog("error", `❌ 引擎初始化失败: ${error.message}`);
+      console.error("引擎初始化失败:", error);
     }
-  }
+  };
 
   // 注册额外插件
-  const registerAdditionalPlugins = (addDebugLog, customSkyBoxConfig = null) => {
+  const registerAdditionalPlugins = (
+    addDebugLog,
+    customSkyBoxConfig = null
+  ) => {
     engineInstance
       .register({
         name: "orbitControl",
@@ -108,11 +127,11 @@ export function useEngine(options = {}) {
         userData: {
           scene: baseScenePlugin.scene,
         },
-      })
+      });
 
     // 只有在没有自定义天空盒配置时，才注册默认天空盒
     if (!customSkyBoxConfig) {
-        engineInstance.register({
+      engineInstance.register({
         name: "SkyBoxPlugin",
         path: "/plugins/webgl/skyBox",
         pluginClass: EngineKernel.SkyBox,
@@ -122,7 +141,7 @@ export function useEngine(options = {}) {
           renderer: baseScenePlugin.renderer,
           skyBoxType: EngineKernel.SkyBoxType.PROCEDURAL_SKY,
         },
-      })
+      });
     } else {
       // 使用自定义天空盒配置
       engineInstance.register({
@@ -133,119 +152,139 @@ export function useEngine(options = {}) {
           scene: baseScenePlugin.scene,
           camera: baseScenePlugin.camera,
           renderer: baseScenePlugin.renderer,
-          ...customSkyBoxConfig
+          ...customSkyBoxConfig,
         },
-      })
+      });
     }
 
-    modelMarker = engineInstance.getPlugin("ModelMarkerPlugin")
-    orbitControlPlugin = engineInstance.getPlugin("orbitControl")
-    
+    modelMarker = engineInstance.getPlugin("ModelMarkerPlugin");
+    orbitControlPlugin = engineInstance.getPlugin("orbitControl");
+
     // console.log(modelMarker, "模型标记插件")
-    addDebugLog("success", "✅ 轨道控制器插件加载完成")
-  }
+    addDebugLog("success", "✅ 轨道控制器插件加载完成");
+  };
 
   // 引擎初始化完成处理
   const onEngineInitComplete = (addDebugLog) => {
     try {
-      addDebugLog("info", "🎯 引擎初始化完成，开始后续配置")
+      addDebugLog("info", "🎯 引擎初始化完成，开始后续配置");
 
       // 启动轨道控制器
       if (orbitControlPlugin) {
-        orbitControlPlugin.initializeEventListeners()
-        addDebugLog("success", "🎮 轨道控制器启动完成")
+        orbitControlPlugin.initializeEventListeners();
+        addDebugLog("success", "🎮 轨道控制器启动完成");
       }
 
       // 启动渲染循环
-      const renderLoopPlugin = engineInstance.getPlugin("RenderLoopPlugin")
+      const renderLoopPlugin = engineInstance.getPlugin("RenderLoopPlugin");
       if (renderLoopPlugin) {
-        renderLoopPlugin.initialize()
-        addDebugLog("success", "🎬 渲染循环启动完成")
+        renderLoopPlugin.initialize();
+        addDebugLog("success", "🎬 渲染循环启动完成");
       }
 
-      engineReady.value = true
-      initStatus.value = "运行中"
-      addDebugLog("success", "🚀 引擎完全就绪")
-      
+      engineReady.value = true;
+      initStatus.value = "运行中";
+      addDebugLog("success", "🚀 引擎完全就绪");
     } catch (error) {
-      addDebugLog("error", `❌ 引擎配置失败: ${error.message}`)
+      addDebugLog("error", `❌ 引擎配置失败: ${error.message}`);
     }
-  }
+  };
 
-  // 加载模型
-  const loadModel = (addDebugLog) => {
-    if (!engineInstance || !engineReady.value) return
+  // 加载模型（新的异步版本）
+  const loadModel = async (addDebugLog) => {
+    if (!engineInstance || !engineReady.value) return;
 
     try {
-      addDebugLog("info", "🐎 开始加载马模型...")
-      const resourcePlugin = engineInstance.getPlugin("ResourceReaderPlugin")
+      addDebugLog("info", "🐎 开始异步加载马模型...");
+      const resourcePlugin = engineInstance.getPlugin("ResourceReaderPlugin");
 
-      const taskId = resourcePlugin.loadModel(
-        "/model/Horse.glb",
-        (gltf) => {
-          console.log("模型加载成功:", gltf)
-
-          // 调整模型材质
-          gltf.scene.traverse((child) => {
-            if (child.material) {
-              child.material.needsUpdate = true
-            }
-          })
-
-          // 添加模型到场景
-          baseScenePlugin.scene.add(gltf.scene)
-          addDebugLog("success", "✅ 马模型加载完成")
-        },
-        (progress) => {
-          if (progress.lengthComputable) {
-            const percent = ((progress.loaded / progress.total) * 100).toFixed(2)
-            addDebugLog("info", `📦 加载进度: ${percent}%`)
-          }
-        },
-        (error) => {
-          addDebugLog("error", `❌ 模型加载失败: ${error.message}`)
+      // 监听加载进度事件
+      const progressHandler = (progress) => {
+        if (progress.taskId && progress.percentage) {
+          addDebugLog("info", `📦 加载进度: ${progress.percentage.toFixed(2)}%`);
         }
-      )
+      };
 
-      if (taskId !== "cached") {
-        addDebugLog("info", `📝 加载任务创建: ${taskId}`)
-      } else {
-        addDebugLog("info", "⚡ 使用缓存模型")
-      }
+      // 监听完成事件
+      const completedHandler = (result) => {
+        if (result.success) {
+          addDebugLog("success", `✅ 马模型异步加载完成 (${result.executionTime}ms)`);
+        }
+      };
+
+      // 监听错误事件
+      const errorHandler = (result) => {
+        addDebugLog("error", `❌ 模型异步加载失败: ${result.error?.message || '未知错误'}`);
+      };
+
+      // 添加事件监听
+      EngineKernel.eventBus.on('task:progress', progressHandler);
+      EngineKernel.eventBus.on('task:completed', completedHandler);
+      EngineKernel.eventBus.on('task:failed', errorHandler);
+
+      // 使用新的异步API加载模型
+      const model = await resourcePlugin.loadModelAsync(
+        "/static/model/Horse.glb",
+        EngineKernel.TaskPriority.HIGH,
+        {
+          timeout: 30000,
+          retryCount: 2,
+          category: 'character'
+        }
+      );
+
+      console.log("模型异步加载成功:", model);
+
+      // 调整模型材质
+      model.traverse((child) => {
+        if (child.material) {
+          child.material.needsUpdate = true;
+        }
+      });
+
+      // 添加模型到场景
+      baseScenePlugin.scene.add(model);
+      addDebugLog("success", "✅ 马模型已添加到场景");
+
+      // 清理事件监听
+      EngineKernel.eventBus.off('task:progress', progressHandler);
+      EngineKernel.eventBus.off('task:completed', completedHandler);
+      EngineKernel.eventBus.off('task:failed', errorHandler);
+
     } catch (error) {
-      addDebugLog("error", `❌ 加载模型出错: ${error.message}`)
+      addDebugLog("error", `❌ 异步加载模型出错: ${error.message}`);
     }
-  }
+  };
 
   // 重置相机位置
   const resetCamera = (addDebugLog) => {
     if (!baseScenePlugin || !orbitControlPlugin) {
-      addDebugLog("warning", "⚠️ 基础场景或轨道控制器未就绪")
-      return
+      addDebugLog("warning", "⚠️ 基础场景或轨道控制器未就绪");
+      return;
     }
 
     try {
       // 使用轨道控制器的专用重置方法
-      orbitControlPlugin.setCameraPosition(500, 500, 500, 0, 0, 0)
-      addDebugLog("info", "🎯 相机位置已重置")
+      orbitControlPlugin.setCameraPosition(500, 500, 500, 0, 0, 0);
+      addDebugLog("info", "🎯 相机位置已重置");
     } catch (error) {
-      addDebugLog("error", `❌ 重置相机失败: ${error.message}`)
+      addDebugLog("error", `❌ 重置相机失败: ${error.message}`);
     }
-  }
+  };
 
   // 切换天空盒
   const toggleSkybox = (addDebugLog) => {
-    addDebugLog("info", "🌌 天空盒切换功能待实现")
-  }
+    addDebugLog("info", "🌌 天空盒切换功能待实现");
+  };
 
   // 显示缓存状态
   const showCacheStatus = (addDebugLog) => {
-    if (!engineInstance) return
+    if (!engineInstance) return;
 
     try {
-      const resourcePlugin = engineInstance.getPlugin("ResourceReaderPlugin")
-      const cacheStatus = resourcePlugin.getCacheStatus()
-      const taskStatus = resourcePlugin.getTasksStatus()
+      const resourcePlugin = engineInstance.getPlugin("ResourceReaderPlugin");
+      const cacheStatus = resourcePlugin.getCacheStatus();
+      const taskStatus = resourcePlugin.getTasksStatus();
 
       addDebugLog(
         "info",
@@ -254,61 +293,61 @@ export function useEngine(options = {}) {
           1024 /
           1024
         ).toFixed(2)}MB, 利用率${cacheStatus.utilization.toFixed(1)}%`
-      )
+      );
       addDebugLog(
         "info",
         `📋 任务: 等待${taskStatus.pending}, 加载中${taskStatus.loading}, 完成${taskStatus.completed}, 错误${taskStatus.error}`
-      )
+      );
     } catch (error) {
-      addDebugLog("error", `❌ 获取缓存状态失败: ${error.message}`)
+      addDebugLog("error", `❌ 获取缓存状态失败: ${error.message}`);
     }
-  }
+  };
 
   // 清理资源缓存
   const clearResourceCache = (addDebugLog) => {
-    if (!engineInstance) return
+    if (!engineInstance) return;
 
     try {
-      const resourcePlugin = engineInstance.getPlugin("ResourceReaderPlugin")
-      resourcePlugin.clearCache()
-      addDebugLog("success", "🗑️ 资源缓存已清理")
+      const resourcePlugin = engineInstance.getPlugin("ResourceReaderPlugin");
+      resourcePlugin.clearCache();
+      addDebugLog("success", "🗑️ 资源缓存已清理");
     } catch (error) {
-      addDebugLog("error", `❌ 清理缓存失败: ${error.message}`)
+      addDebugLog("error", `❌ 清理缓存失败: ${error.message}`);
     }
-  }
+  };
 
   // 添加获取引擎实例的方法
   const getEngineInstance = () => {
-    return engineInstance
-  }
+    return engineInstance;
+  };
 
   // 获取轨道控制器插件
   const getOrbitControlPlugin = () => {
-    return orbitControlPlugin
-  }
+    return orbitControlPlugin;
+  };
 
   // 获取基础场景插件
   const getBaseScenePlugin = () => {
-    return baseScenePlugin
-  }
+    return baseScenePlugin;
+  };
 
   // 获取模型标记插件
   const getModelMarkerPlugin = () => {
-    return modelMarker
-  }
+    return modelMarker;
+  };
 
   // 设置调试模式（占位符函数）
   const setDebugMode = (enabled, addDebugLog) => {
     if (addDebugLog) {
-      addDebugLog("info", `🔧 调试模式${enabled ? '已启用' : '已禁用'}`)
+      addDebugLog("info", `🔧 调试模式${enabled ? "已启用" : "已禁用"}`);
     }
-  }
+  };
 
   return {
     // 状态
     engineReady,
     initStatus,
-    
+
     // 方法
     initializeEngine,
     loadModel,
@@ -320,6 +359,6 @@ export function useEngine(options = {}) {
     getBaseScenePlugin,
     getEngineInstance,
     getModelMarkerPlugin,
-    setDebugMode
-  }
-} 
+    setDebugMode,
+  };
+}

@@ -501,8 +501,8 @@ const initializeApplication = async () => {
   }
 }
 
-// 简化的按钮处理函数
-const handleLoadModel = () => loadModel(addDebugLog)
+// 简化的按钮处理函数（更新为异步）
+const handleLoadModel = async () => await loadModel(addDebugLog)
 const handleResetCamera = () => resetCamera(addDebugLog)
 const handleToggleSkybox = () => toggleSkybox(addDebugLog)
 const handleShowCacheStatus = () => showCacheStatus(addDebugLog)

@@ -146,7 +146,9 @@ const initializeHDREngine = async () => {
     
     const hdrSkyBoxConfig = {
       skyBoxType: EngineKernel.SkyBoxType.HDR_ENVIRONMENT,
-      hdrMapPath: '/skybox/rustig_koppie_puresky_2k.hdr',
+      // hdrMapPath: '/skybox/SPACE037SN.hdr',
+      // hdrMapPath: '/skybox/rustig_koppie_puresky_2k.hdr',
+      hdrMapPath: '/skybox/Space_Nebula_A.exr',
       hdrIntensity: hdrIntensity.value,
       size: 50000
     }
@@ -198,43 +200,6 @@ const registerHDRSkyboxPlugin = async () => {
     
     if (!engineInstance || !baseScenePlugin) {
       throw new Error('引擎实例或基础场景插件未就绪')
-    }
-
-    addDebugLog('info', '📦 注册HDR天空盒插件')
-
-    // 注册HDR天空盒插件
-    engineInstance.register({
-      name: 'HDRSkyBoxPlugin',
-      path: '/plugins/webgl/skyBox',
-      pluginClass: EngineKernel.SkyBox,
-      userData: {
-        scene: baseScenePlugin.scene,
-        camera: baseScenePlugin.camera,
-        renderer: baseScenePlugin.renderer,
-        skyBoxType: EngineKernel.SkyBoxType.HDR_ENVIRONMENT,
-        hdrMapPath: selectedHDRFile.value,
-        hdrIntensity: hdrIntensity.value,
-        size: 50000
-      }
-    })
-
-    // 获取插件实例
-    skyboxPlugin = engineInstance.getPlugin('HDRSkyBoxPlugin')
-    
-    if (skyboxPlugin) {
-      addDebugLog('success', '✅ HDR天空盒插件注册成功')
-      
-      // 监听天空盒就绪事件
-      EngineKernel.eventBus.on('skybox-ready', (data) => {
-        addDebugLog('success', `🌌 HDR天空盒加载完成: ${data.type}`)
-      })
-      
-      EngineKernel.eventBus.on('skybox-error', (error) => {
-        addDebugLog('error', `❌ HDR天空盒加载失败: ${error.message}`)
-      })
-      
-    } else {
-      throw new Error('HDR天空盒插件获取失败')
     }
 
   } catch (error) {
@@ -385,9 +350,9 @@ const handleReloadHDR = async () => {
 }
 
 /**
- * 加载测试模型
+ * 加载测试模型（异步版本）
  */
-const handleLoadTestModel = () => {
+const handleLoadTestModel = async () => {
   try {
     const engineInstance = getEngineInstance()
     const baseScenePlugin = getBaseScenePlugin()
@@ -397,7 +362,7 @@ const handleLoadTestModel = () => {
       return
     }
 
-    addDebugLog('info', '🐎 开始加载测试模型...')
+    addDebugLog('info', '🐎 开始异步加载测试模型...')
     
     const resourcePlugin = engineInstance.getPlugin('ResourceReaderPlugin')
     if (!resourcePlugin) {
@@ -405,32 +370,47 @@ const handleLoadTestModel = () => {
       return
     }
 
-    resourcePlugin.loadModel(
-      '/model/Horse.glb',
-      (gltf) => {
-        console.log('模型加载成功:', gltf)
-        gltf.scene.traverse((child) => {
-          if (child.material) {
-            child.material.needsUpdate = true
-          }
-        })
-        gltf.scene.position.set(0, -50, 0)
-        gltf.scene.scale.setScalar(0.5)
-        baseScenePlugin.scene.add(gltf.scene)
-        addDebugLog('success', '✅ 测试模型加载完成')
-      },
-      (progress) => {
-        if (progress.lengthComputable) {
-          const percent = ((progress.loaded / progress.total) * 100).toFixed(2)
-          addDebugLog('info', `📦 模型加载进度: ${percent}%`)
-        }
-      },
-      (error) => {
-        addDebugLog('error', `❌ 模型加载失败: ${error.message}`)
+    // 监听加载进度
+    const progressHandler = (progress) => {
+      if (progress.taskId && progress.percentage) {
+        addDebugLog('info', `📦 模型异步加载进度: ${progress.percentage.toFixed(2)}%`)
+      }
+    }
+
+    // 添加进度监听
+    EngineKernel.eventBus.on('task:progress', progressHandler)
+
+    // 使用新的异步API加载模型
+    const model = await resourcePlugin.loadModelAsync(
+"/static/model/Horse.glb",
+      EngineKernel.TaskPriority.HIGH,
+      {
+        timeout: 30000,
+        retryCount: 2,
+        category: 'test-model'
       }
     )
+
+    console.log('模型异步加载成功:', model)
+    
+    // 调整模型材质
+    model.traverse((child) => {
+      if (child.material) {
+        child.material.needsUpdate = true
+      }
+    })
+    
+    model.position.set(0, -50, 0)
+    model.scale.setScalar(0.5)
+    baseScenePlugin.scene.add(model)
+    
+    addDebugLog('success', '✅ 测试模型异步加载完成')
+
+    // 清理进度监听
+    EngineKernel.eventBus.off('task:progress', progressHandler)
+
   } catch (error) {
-    addDebugLog('error', `❌ 加载测试模型出错: ${error.message}`)
+    addDebugLog('error', `❌ 模型异步加载失败: ${error.message}`)
   }
 }
 

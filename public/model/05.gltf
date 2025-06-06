@@ -1,86 +1,9 @@
 {
   "asset": {
-    "generator": "glTF-Transform v3.10.1",
-    "version": "2.0"
+    "version": "2.0",
+    "generator": "babylon.js glTF exporter for 3dsmax 2023 v20240312.5"
   },
-  "accessors": [
-    {
-      "type": "SCALAR",
-      "componentType": 5123,
-      "count": 54492
-    },
-    {
-      "name": "accessorPositions",
-      "type": "VEC3",
-      "componentType": 5126,
-      "count": 30490,
-      "max": [
-        142.8966827392578,
-        139.33505249023438,
-        66.25254821777344
-      ],
-      "min": [
-        -142.8966064453125,
-        0,
-        -258.01953125
-      ]
-    },
-    {
-      "name": "accessorNormals",
-      "type": "VEC3",
-      "componentType": 5126,
-      "count": 30490
-    }
-  ],
-  "bufferViews": [
-    {
-      "buffer": 0,
-      "byteOffset": 0,
-      "byteLength": 79327
-    }
-  ],
-  "buffers": [
-    {
-      "name": "墙136",
-      "uri": "墙136.bin",
-      "byteLength": 79327
-    }
-  ],
-  "meshes": [
-    {
-      "name": "墙136",
-      "primitives": [
-        {
-          "attributes": {
-            "POSITION": 1,
-            "NORMAL": 2
-          },
-          "mode": 4,
-          "indices": 0,
-          "extensions": {
-            "KHR_draco_mesh_compression": {
-              "bufferView": 0,
-              "attributes": {
-                "POSITION": 0,
-                "NORMAL": 1
-              }
-            }
-          }
-        }
-      ]
-    }
-  ],
-  "nodes": [
-    {
-      "name": "墙136",
-      "translation": [
-        2891.191,
-        16.0910969,
-        -365.55
-      ],
-      "mesh": 0
-    }
-  ],
+  "scene": 0,
   "scenes": [
     {
       "nodes": [
@@ -88,11 +11,98 @@
       ]
     }
   ],
-  "scene": 0,
-  "extensionsUsed": [
-    "KHR_draco_mesh_compression"
+  "nodes": [
+    {
+      "mesh": 0,
+      "translation": [
+        2891.191,
+        16.0910969,
+        -365.55
+      ],
+      "name": "墙136"
+    }
   ],
-  "extensionsRequired": [
-    "KHR_draco_mesh_compression"
+  "meshes": [
+    {
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "indices": 0
+        }
+      ],
+      "name": "墙136"
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5125,
+      "count": 130695,
+      "type": "SCALAR",
+      "name": "accessorIndices"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 86393,
+      "max": [
+        142.896683,
+        139.335052,
+        66.25255
+      ],
+      "min": [
+        -142.8966,
+        0.0,
+        -258.019531
+      ],
+      "type": "VEC3",
+      "name": "accessorPositions"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 1036716,
+      "componentType": 5126,
+      "count": 86393,
+      "type": "VEC3",
+      "name": "accessorNormals"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 86393,
+      "type": "VEC2",
+      "name": "accessorUVs"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 522780,
+      "name": "bufferViewScalar"
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 522780,
+      "byteLength": 2073432,
+      "byteStride": 12,
+      "name": "bufferViewFloatVec3"
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 2596212,
+      "byteLength": 691144,
+      "byteStride": 8,
+      "name": "bufferViewFloatVec2"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "05.bin",
+      "byteLength": 3287356
+    }
   ]
 }

@@ -1,86 +1,9 @@
 {
   "asset": {
-    "generator": "glTF-Transform v3.10.1",
-    "version": "2.0"
+    "version": "2.0",
+    "generator": "babylon.js glTF exporter for 3dsmax 2023 v20240312.5"
   },
-  "accessors": [
-    {
-      "type": "SCALAR",
-      "componentType": 5123,
-      "count": 167841
-    },
-    {
-      "name": "accessorPositions",
-      "type": "VEC3",
-      "componentType": 5126,
-      "count": 64611,
-      "max": [
-        208.9732666015625,
-        201.09902954101562,
-        59.47367858886719
-      ],
-      "min": [
-        -208.97320556640625,
-        0,
-        -59.47369384765625
-      ]
-    },
-    {
-      "name": "accessorNormals",
-      "type": "VEC3",
-      "componentType": 5126,
-      "count": 64611
-    }
-  ],
-  "bufferViews": [
-    {
-      "buffer": 0,
-      "byteOffset": 0,
-      "byteLength": 189994
-    }
-  ],
-  "buffers": [
-    {
-      "name": "Standard_221",
-      "uri": "Standard_221.bin",
-      "byteLength": 189994
-    }
-  ],
-  "meshes": [
-    {
-      "name": "Standard_221",
-      "primitives": [
-        {
-          "attributes": {
-            "POSITION": 1,
-            "NORMAL": 2
-          },
-          "mode": 4,
-          "indices": 0,
-          "extensions": {
-            "KHR_draco_mesh_compression": {
-              "bufferView": 0,
-              "attributes": {
-                "POSITION": 0,
-                "NORMAL": 1
-              }
-            }
-          }
-        }
-      ]
-    }
-  ],
-  "nodes": [
-    {
-      "name": "Standard_221",
-      "translation": [
-        3224.21826,
-        -6.93333435,
-        -576.334656
-      ],
-      "mesh": 0
-    }
-  ],
+  "scene": 0,
   "scenes": [
     {
       "nodes": [
@@ -88,11 +11,98 @@
       ]
     }
   ],
-  "scene": 0,
-  "extensionsUsed": [
-    "KHR_draco_mesh_compression"
+  "nodes": [
+    {
+      "mesh": 0,
+      "translation": [
+        3224.21826,
+        -6.93333435,
+        -576.334656
+      ],
+      "name": "Standard_221"
+    }
   ],
-  "extensionsRequired": [
-    "KHR_draco_mesh_compression"
+  "meshes": [
+    {
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "indices": 0
+        }
+      ],
+      "name": "Standard_221"
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5125,
+      "count": 280401,
+      "type": "SCALAR",
+      "name": "accessorIndices"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 104665,
+      "max": [
+        208.973267,
+        201.09903,
+        59.47368
+      ],
+      "min": [
+        -208.9732,
+        0.0,
+        -59.4736938
+      ],
+      "type": "VEC3",
+      "name": "accessorPositions"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 1255980,
+      "componentType": 5126,
+      "count": 104665,
+      "type": "VEC3",
+      "name": "accessorNormals"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 104665,
+      "type": "VEC2",
+      "name": "accessorUVs"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 1121604,
+      "name": "bufferViewScalar"
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1121604,
+      "byteLength": 2511960,
+      "byteStride": 12,
+      "name": "bufferViewFloatVec3"
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 3633564,
+      "byteLength": 837320,
+      "byteStride": 8,
+      "name": "bufferViewFloatVec2"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "02.bin",
+      "byteLength": 4470884
+    }
   ]
 }

@@ -218,71 +218,66 @@ const loadModelFilesList = async () => {
   }
 }
 
-// 加载单个模型文件
+// 加载单个模型文件（使用新的异步API）
 const loadSingleModelFile = async (filePath, index) => {
-  return new Promise((resolve, reject) => {
-    try {
-      // 修复：正确获取引擎实例
-      const engineInstance = getEngineInstance()
-      const resourcePlugin = engineInstance?.getPlugin("ResourceReaderPlugin")
-      const baseScene = getBaseScenePlugin()
-      
-      if (!resourcePlugin || !baseScene) {
-        reject(new Error('插件未就绪'))
-        return
-      }
-
-      // 修正路径格式（将反斜杠转为正斜杠）
-      const normalizedPath = '/' + filePath.replace(/\\/g, '/')
-      
-      addDebugLog('info', `🔄 [${index + 1}] 加载: ${normalizedPath}`)
-      const taskId = resourcePlugin.loadModel(
-        normalizedPath,
-        (gltf) => {
-        //   // 调整模型位置避免重叠
-        //   const offsetX = (index % 4) * 5 - 7.5 // 4列布局
-        //   const offsetZ = Math.floor(index / 4) * 5 - 7.5
-          
-        //   gltf.scene.position.set(offsetX, 0, offsetZ)
-        //   gltf.scene.scale.setScalar(0.5) // 缩小模型避免场景拥挤
-          
-          // 调整材质
-          gltf.scene.traverse((child) => {
-            if (child.material) {
-              child.material.needsUpdate = true
-            }
-          })
-
-          // 添加到场景
-          baseScene.scene.add(gltf.scene)
-          loadedModels.push(gltf.scene)
-          
-          modelStats.value.loaded++
-          addDebugLog('success', `✅ [${index + 1}] 加载完成: ${normalizedPath}`)
-          resolve(gltf)
-        },
-        (progress) => {
-          // 进度回调
-          if (progress.lengthComputable) {
-            const percent = Math.round((progress.loaded / progress.total) * 100)
-            addDebugLog('info', `📊 [${index + 1}] 加载进度: ${percent}%`)
-          }
-        },
-        (error) => {
-          modelStats.value.failed++
-          addDebugLog('error', `❌ [${index + 1}] 加载失败: ${filePath} - ${error.message}`)
-          reject(error)
-        }
-      )
-    } catch (error) {
-      modelStats.value.failed++
-      addDebugLog('error', `❌ [${index + 1}] 加载异常: ${filePath} - ${error.message}`)
-      reject(error)
+  try {
+    // 修复：正确获取引擎实例
+    const engineInstance = getEngineInstance()
+    const resourcePlugin = engineInstance?.getPlugin("ResourceReaderPlugin")
+    const baseScene = getBaseScenePlugin()
+    
+    if (!resourcePlugin || !baseScene) {
+      throw new Error('插件未就绪')
     }
-  })
+
+    // 修正路径格式（将反斜杠转为正斜杠）
+    const normalizedPath = '/' + filePath.replace(/\\/g, '/')
+    
+    addDebugLog('info', `🔄 [${index + 1}] 异步加载: ${normalizedPath}`)
+    
+    // 使用新的异步API加载模型
+    const model = await resourcePlugin.loadModelAsync(
+      normalizedPath,
+      EngineKernel.TaskPriority.NORMAL, // 批量加载使用普通优先级
+      {
+        timeout: 30000,
+        retryCount: 1,
+        category: 'batch-load',
+        metadata: { index, originalPath: filePath }
+      }
+    )
+
+    // 调整模型位置避免重叠
+    const offsetX = (index % 4) * 5 - 7.5 // 4列布局
+    const offsetZ = Math.floor(index / 4) * 5 - 7.5
+    
+    model.position.set(offsetX, 0, offsetZ)
+    model.scale.setScalar(0.5) // 缩小模型避免场景拥挤
+      
+    // 调整材质
+    model.traverse((child) => {
+      if (child.material) {
+        child.material.needsUpdate = true
+      }
+    })
+
+    // 添加到场景
+    baseScene.scene.add(model)
+    loadedModels.push(model)
+    
+    modelStats.value.loaded++
+    addDebugLog('success', `✅ [${index + 1}] 异步加载完成: ${normalizedPath}`)
+    
+    return { scene: model } // 保持与原有返回格式的兼容性
+    
+  } catch (error) {
+    modelStats.value.failed++
+    addDebugLog('error', `❌ [${index + 1}] 异步加载失败: ${filePath} - ${error.message}`)
+    throw error
+  }
 }
 
-// 从JSON加载所有模型
+// 从JSON加载所有模型（使用新的批量异步API）
 const loadModelsFromJson = async () => {
   if (!engineReady.value) {
     addDebugLog('warning', '⚠️ 引擎未就绪，请等待初始化完成')
@@ -305,38 +300,81 @@ const loadModelsFromJson = async () => {
     }
     
     modelStats.value.total = modelFiles.length
-    addDebugLog('info', `🚀 开始批量加载${modelFiles.length}个模型...`)
+    addDebugLog('info', `🚀 开始批量异步加载${modelFiles.length}个模型...`)
     
-    // 并发加载模型（限制并发数避免卡顿）
-    const concurrencyLimit = 3 // 同时最多加载3个模型
-    const results = []
+    const engineInstance = getEngineInstance()
+    const resourcePlugin = engineInstance?.getPlugin("ResourceReaderPlugin")
+    const baseScene = getBaseScenePlugin()
     
-    for (let i = 0; i < modelFiles.length; i += concurrencyLimit) {
-      const batch = modelFiles.slice(i, i + concurrencyLimit)
-      const batchPromises = batch.map((file, batchIndex) => 
-        loadSingleModelFile(file, i + batchIndex)
-          .catch(error => {
-            // 单个文件加载失败不影响其他文件
-            return { error: error.message, file }
-          })
-      )
-      
-      const batchResults = await Promise.all(batchPromises)
-      results.push(...batchResults)
-      
-      // 给界面更新的时间
-      await new Promise(resolve => setTimeout(resolve, 100))
+    if (!resourcePlugin || !baseScene) {
+      throw new Error('插件未就绪')
     }
+
+    // 准备批量加载的URL列表
+    const modelUrls = modelFiles.map(file => '/' + file.replace(/\\/g, '/'))
+    
+    // 监听批量加载进度
+    const progressHandler = (progress) => {
+      if (progress.taskId && progress.percentage) {
+        addDebugLog('info', `📊 批量加载进度: ${progress.percentage.toFixed(1)}%`)
+      }
+    }
+
+    // 添加进度监听
+    EngineKernel.eventBus.on('task:progress', progressHandler)
+    
+    // 使用新的批量异步加载API
+    const results = await resourcePlugin.loadBatchAsync(
+      modelUrls,
+      EngineKernel.TaskPriority.NORMAL,
+      {
+        timeout: 45000,
+        retryCount: 1,
+        category: 'batch-load'
+      }
+    )
+    
+    // 清理进度监听
+    EngineKernel.eventBus.off('task:progress', progressHandler)
+    
+    // 处理加载结果
+    results.forEach((result, index) => {
+      if (result.model) {
+        // 调整模型位置避免重叠
+        const offsetX = (index % 4) * 5 - 7.5 // 4列布局
+        const offsetZ = Math.floor(index / 4) * 5 - 7.5
+        
+        result.model.position.set(offsetX, 0, offsetZ)
+        result.model.scale.setScalar(0.5) // 缩小模型避免场景拥挤
+        
+        // 调整材质
+        result.model.traverse((child) => {
+          if (child.material) {
+            child.material.needsUpdate = true
+          }
+        })
+
+        // 添加到场景
+        baseScene.scene.add(result.model)
+        loadedModels.push(result.model)
+        
+        modelStats.value.loaded++
+        addDebugLog('success', `✅ [${index + 1}] ${result.url} 加载成功`)
+      } else {
+        modelStats.value.failed++
+        addDebugLog('error', `❌ [${index + 1}] ${result.url} 加载失败: ${result.error?.message || '未知错误'}`)
+      }
+    })
     
     const endTime = performance.now()
     loadTime.value = Math.round(endTime - modelLoadStartTime)
     
-    addDebugLog('success', `🎉 批量加载完成！`)
+    addDebugLog('success', `🎉 批量异步加载完成！`)
     addDebugLog('info', `📊 成功: ${modelStats.value.loaded}, 失败: ${modelStats.value.failed}`)
     addDebugLog('info', `⏱️ 总耗时: ${loadTime.value}ms`)
     
   } catch (error) {
-    addDebugLog('error', `❌ 批量加载失败: ${error.message}`)
+    addDebugLog('error', `❌ 批量异步加载失败: ${error.message}`)
   } finally {
     isLoading.value = false
   }

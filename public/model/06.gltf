@@ -1,86 +1,9 @@
 {
   "asset": {
-    "generator": "glTF-Transform v3.10.1",
-    "version": "2.0"
+    "version": "2.0",
+    "generator": "babylon.js glTF exporter for 3dsmax 2023 v20240312.5"
   },
-  "accessors": [
-    {
-      "type": "SCALAR",
-      "componentType": 5125,
-      "count": 193482
-    },
-    {
-      "name": "accessorPositions",
-      "type": "VEC3",
-      "componentType": 5126,
-      "count": 98628,
-      "max": [
-        128.44036865234375,
-        217.88987731933594,
-        559.24951171875
-      ],
-      "min": [
-        -107.26100158691406,
-        0,
-        -109.61079406738281
-      ]
-    },
-    {
-      "name": "accessorNormals",
-      "type": "VEC3",
-      "componentType": 5126,
-      "count": 98628
-    }
-  ],
-  "bufferViews": [
-    {
-      "buffer": 0,
-      "byteOffset": 0,
-      "byteLength": 245194
-    }
-  ],
-  "buffers": [
-    {
-      "name": "Material #214330987421",
-      "uri": "Material #214330987421.bin",
-      "byteLength": 245194
-    }
-  ],
-  "meshes": [
-    {
-      "name": "Material #214330987421",
-      "primitives": [
-        {
-          "attributes": {
-            "POSITION": 1,
-            "NORMAL": 2
-          },
-          "mode": 4,
-          "indices": 0,
-          "extensions": {
-            "KHR_draco_mesh_compression": {
-              "bufferView": 0,
-              "attributes": {
-                "POSITION": 0,
-                "NORMAL": 1
-              }
-            }
-          }
-        }
-      ]
-    }
-  ],
-  "nodes": [
-    {
-      "name": "Material #214330987421",
-      "translation": [
-        2825.9502,
-        -7.75480652,
-        -1212.23828
-      ],
-      "mesh": 0
-    }
-  ],
+  "scene": 0,
   "scenes": [
     {
       "nodes": [
@@ -88,11 +11,98 @@
       ]
     }
   ],
-  "scene": 0,
-  "extensionsUsed": [
-    "KHR_draco_mesh_compression"
+  "nodes": [
+    {
+      "mesh": 0,
+      "translation": [
+        2825.9502,
+        -7.75480652,
+        -1212.23828
+      ],
+      "name": "Material #214330987421"
+    }
   ],
-  "extensionsRequired": [
-    "KHR_draco_mesh_compression"
+  "meshes": [
+    {
+      "primitives": [
+        {
+          "attributes": {
+            "POSITION": 1,
+            "NORMAL": 2,
+            "TEXCOORD_0": 3
+          },
+          "indices": 0
+        }
+      ],
+      "name": "Material #214330987421"
+    }
+  ],
+  "accessors": [
+    {
+      "bufferView": 0,
+      "componentType": 5125,
+      "count": 432042,
+      "type": "SCALAR",
+      "name": "accessorIndices"
+    },
+    {
+      "bufferView": 1,
+      "componentType": 5126,
+      "count": 257344,
+      "max": [
+        128.440369,
+        217.889877,
+        559.2496
+      ],
+      "min": [
+        -107.261,
+        0.0,
+        -109.6111
+      ],
+      "type": "VEC3",
+      "name": "accessorPositions"
+    },
+    {
+      "bufferView": 1,
+      "byteOffset": 3088128,
+      "componentType": 5126,
+      "count": 257344,
+      "type": "VEC3",
+      "name": "accessorNormals"
+    },
+    {
+      "bufferView": 2,
+      "componentType": 5126,
+      "count": 257344,
+      "type": "VEC2",
+      "name": "accessorUVs"
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteLength": 1728168,
+      "name": "bufferViewScalar"
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 1728168,
+      "byteLength": 6176256,
+      "byteStride": 12,
+      "name": "bufferViewFloatVec3"
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 7904424,
+      "byteLength": 2058752,
+      "byteStride": 8,
+      "name": "bufferViewFloatVec2"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "06.bin",
+      "byteLength": 9963176
+    }
   ]
 }

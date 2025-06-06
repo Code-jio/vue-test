@@ -6,6 +6,7 @@ import TextMarkerTestView from '@/views/TextMarkerTestView.vue'
 import HDRSkyTestView from '@/views/HDRSkyTest.vue'
 import HDRSkyBasicExampleView from '@/views/HDRSkyBasicExample.vue'
 import ModelLoadTestView from '@/views/modelLoadTest.vue'
+import AsyncLoadingTestView from '@/views/AsyncLoadingTestView.vue'
 // import CSS3DAdvancedView from '@/views/CSS3DAdvanced.vue'
 
 const router = createRouter({
@@ -13,7 +14,7 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: '/text-marker-test'
+      redirect: '/async-loading-test'
     },
     {
       path: '/webgl-test',
@@ -66,6 +67,14 @@ const router = createRouter({
       component: ModelLoadTestView,
       meta: {
         title: '模型加载性能测试'
+      }
+    },
+    {
+      path: '/async-loading-test',
+      name: 'async-loading-test',
+      component: AsyncLoadingTestView,
+      meta: {
+        title: '异步模型加载测试'
       }
     },
     // {
