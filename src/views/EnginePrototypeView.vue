@@ -303,6 +303,9 @@ const showModelInfo = (pickedObject) => {
         })
         css3dInfoInstance = objectId
         addDebugLog("success", `✅ CSS3D对象创建成功，ID: ${objectId}`)
+        
+        // 创建CSS3D对象后，立即聚焦到该位置
+        focusOnCSS3DObject(finalPosition)
       } catch (e) {
         addDebugLog("error", `❌ CSS3D对象创建失败: ${e.message}`)
         // 尝试备用方法
@@ -335,6 +338,9 @@ const useBackupCSS3DMethod = (container, position) => {
     if (typeof css3dPlugin.addObject === 'function') {
       css3dInfoInstance = css3dPlugin.addObject(css3dObject)
       addDebugLog("success", "✅ CSS3D对象创建成功（备用方法）")
+      
+      // 备用方法创建成功后也要聚焦
+      focusOnCSS3DObject(position)
     } else {
       // 最后的备用方法 - 直接添加到主场景
       const baseScenePlugin = getBaseScenePlugin()
@@ -342,6 +348,9 @@ const useBackupCSS3DMethod = (container, position) => {
         baseScenePlugin.scene.add(css3dObject)
         css3dInfoInstance = css3dObject
         addDebugLog("success", "✅ CSS3D对象添加到主场景（最后备用方法）")
+        
+        // 最后备用方法创建成功后也要聚焦
+        focusOnCSS3DObject(position)
       } else {
         throw new Error('无法找到可用的场景来添加CSS3D对象')
       }
@@ -407,6 +416,130 @@ const focusOnModel = (object) => {
   }
   
   addDebugLog("info", `📍 相机已聚焦到模型: ${object.name}`)
+}
+
+// 聚焦到CSS3D对象位置
+const focusOnCSS3DObject = (position) => {
+  const baseScenePlugin = getBaseScenePlugin()
+  const orbitControlPlugin = getOrbitControlPlugin()
+  
+  if (!baseScenePlugin || !position) {
+    addDebugLog("warning", "⚠️ 无法聚焦CSS3D对象：缺少必要的插件或位置信息")
+    return
+  }
+  
+  try {
+    addDebugLog("info", `🎯 开始聚焦到CSS3D对象位置: (${position[0].toFixed(2)}, ${position[1].toFixed(2)}, ${position[2].toFixed(2)})`)
+    
+    // 目标位置（CSS3D对象的位置）
+    const targetPosition = new EngineKernel.THREE.Vector3(position[0], position[1], position[2])
+    
+    // 计算合适的相机位置（在CSS3D对象前方一定距离）
+    const distance = 30 // 相机到目标的距离
+    const cameraOffset = new EngineKernel.THREE.Vector3(0, 5, distance) // 相机在目标前方偏上一点
+    const finalCameraPosition = targetPosition.clone().add(cameraOffset)
+    
+    // 使用引擎内置的 cameraFlyTo 方法
+    if (typeof baseScenePlugin.cameraFlyTo === 'function') {
+      addDebugLog("info", "🚀 使用引擎内置 cameraFlyTo 方法")
+      
+      baseScenePlugin.cameraFlyTo({
+        position: finalCameraPosition,        // 相机目标位置
+        lookAt: targetPosition,              // 相机朝向目标（CSS3D对象位置）
+        duration: 1500,                      // 动画时长1.5秒
+        easing: (t) => t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2, // 平滑缓动 (easeInOutQuad)
+        onUpdate: () => {
+          // 动画过程中的回调（可选）
+        },
+        onComplete: () => {
+          addDebugLog("success", "✅ 相机聚焦动画完成（引擎方法）")
+          
+          // 确保轨道控制器目标正确设置
+          if (orbitControlPlugin && orbitControlPlugin.setTarget) {
+            orbitControlPlugin.setTarget(targetPosition.x, targetPosition.y, targetPosition.z)
+          }
+        }
+      })
+      
+      addDebugLog("success", `🎬 相机聚焦动画已启动（引擎方法），目标位置: (${position[0].toFixed(2)}, ${position[1].toFixed(2)}, ${position[2].toFixed(2)})`)
+      
+    } else if (typeof orbitControlPlugin?.cameraFlyTo === 'function') {
+      // 尝试使用轨道控制器的 cameraFlyTo 方法
+      addDebugLog("info", "🎮 使用轨道控制器 cameraFlyTo 方法")
+      
+      orbitControlPlugin.cameraFlyTo({
+        position: finalCameraPosition,
+        lookAt: targetPosition,
+        duration: 1500,
+        autoLookAt: true,
+        easing: (t) => 1 - Math.pow(1 - t, 3), // easeOutCubic
+        onComplete: () => {
+          addDebugLog("success", "✅ 相机聚焦动画完成（控制器方法）")
+        }
+      })
+      
+      addDebugLog("success", `🎬 相机聚焦动画已启动（控制器方法），目标位置: (${position[0].toFixed(2)}, ${position[1].toFixed(2)}, ${position[2].toFixed(2)})`)
+      
+    } else {
+      // 如果引擎方法不可用，使用备用方法
+      addDebugLog("warning", "⚠️ 引擎 cameraFlyTo 方法不可用，使用备用实现")
+      
+      const camera = baseScenePlugin.camera
+      const currentPosition = camera.position.clone()
+      
+      // 使用平滑过渡动画
+      const startTime = Date.now()
+      const duration = 1500 // 1.5秒过渡时间
+      
+      const animateCamera = () => {
+        const elapsed = Date.now() - startTime
+        const progress = Math.min(elapsed / duration, 1)
+        
+        // 使用缓动函数让移动更平滑
+        const easeProgress = 1 - Math.pow(1 - progress, 3) // easeOutCubic
+        
+        // 插值计算当前相机位置
+        const currentCameraPos = currentPosition.clone().lerp(finalCameraPosition, easeProgress)
+        
+        // 更新相机位置
+        camera.position.copy(currentCameraPos)
+        
+        // 设置轨道控制器目标为CSS3D对象位置
+        if (orbitControlPlugin && orbitControlPlugin.setTarget) {
+          orbitControlPlugin.setTarget(targetPosition.x, targetPosition.y, targetPosition.z)
+        }
+        
+        // 让相机看向目标
+        camera.lookAt(targetPosition)
+        
+        // 如果动画未完成，继续下一帧
+        if (progress < 1) {
+          requestAnimationFrame(animateCamera)
+        } else {
+          addDebugLog("success", "✅ 相机聚焦动画完成（备用方法）")
+          
+          // 最终确保轨道控制器目标正确设置
+          if (orbitControlPlugin && orbitControlPlugin.setTarget) {
+            orbitControlPlugin.setTarget(targetPosition.x, targetPosition.y, targetPosition.z)
+          }
+          
+          // 更新轨道控制器状态
+          if (orbitControlPlugin && orbitControlPlugin.update) {
+            orbitControlPlugin.update()
+          }
+        }
+      }
+      
+      // 开始动画
+      animateCamera()
+      
+      addDebugLog("success", `🎬 相机聚焦动画已启动（备用方法），目标位置: (${position[0].toFixed(2)}, ${position[1].toFixed(2)}, ${position[2].toFixed(2)})`)
+    }
+    
+  } catch (error) {
+    addDebugLog("error", `❌ 聚焦CSS3D对象失败: ${error.message}`)
+    console.error('聚焦CSS3D对象错误详情:', error)
+  }
 }
 
 // 高亮模型
@@ -775,6 +908,9 @@ const testCSS3DDisplay = () => {
           })
           css3dInfoInstance = objectId
           addDebugLog("success", `✅ CSS3D测试对象创建成功，ID: ${objectId}`)
+          
+          // 聚焦到测试CSS3D对象
+          focusOnCSS3DObject([testPosition.x, testPosition.y, testPosition.z])
         } catch (e) {
           addDebugLog("error", `❌ CSS3D测试对象创建失败: ${e.message}`)
           // 使用备用方法
@@ -956,7 +1092,7 @@ const initializeApplication = async () => {
          }
          
          // 显示快捷键提示
-         addDebugLog("info", "⌨️ 快捷键提示: R=重置相机, H=隐藏面板, T=测试控制器, C=测试CSS3D, X=清除轨迹")
+         addDebugLog("info", "⌨️ 快捷键提示: R=重置相机, H=隐藏面板, T=测试控制器, C=测试CSS3D, X=清除轨迹, F=聚焦中心, G=聚焦马模型")
        }, 2000)
     
   } catch (error) {
@@ -996,6 +1132,23 @@ const setupKeyboardControls = () => {
         // X键清除轨迹线
         clearTrajectory()
         addDebugLog("info", "🧹 快捷键X: 轨迹线已清除")
+        break
+      case 'f':
+        // F键测试聚焦功能（聚焦到场景中心）
+        const centerPosition = [0, 10, 0] // 场景中心稍微偏上的位置
+        focusOnCSS3DObject(centerPosition)
+        addDebugLog("info", "🎯 快捷键F: 聚焦到场景中心")
+        break
+      case 'g':
+        // G键聚焦到马模型（如果存在）
+        if (horseModel.value) {
+          const horsePosition = new EngineKernel.THREE.Vector3()
+          horseModel.value.getWorldPosition(horsePosition)
+          focusOnCSS3DObject([horsePosition.x, horsePosition.y + 5, horsePosition.z])
+          addDebugLog("info", "🐎 快捷键G: 聚焦到马模型")
+        } else {
+          addDebugLog("warning", "⚠️ 马模型不存在，无法聚焦")
+        }
         break
     }
   }

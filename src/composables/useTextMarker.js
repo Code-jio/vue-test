@@ -70,6 +70,12 @@ export function useTextMarker() {
                 gridHelper: false, // 图文标注场景不需要网格
                 axesHelper: false, // 图文标注场景不需要坐标轴
               },
+              floorConfig:{
+                enabled: false, // 禁用地板生成
+                type: 'none',
+                size: 1000,
+                position: [0, 0, 0]
+              }
             },
           },
         ],
@@ -208,13 +214,13 @@ export function useTextMarker() {
     }
 
     try {
-      // 添加地面
-      const groundGeometry = new THREE.PlaneGeometry(20, 20)
-      const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x90EE90 })
-      const ground = new THREE.Mesh(groundGeometry, groundMaterial)
-      ground.rotation.x = -Math.PI / 2
-      ground.name = 'ground'
-      scene.add(ground)
+      // 禁用地面生成
+      // const groundGeometry = new THREE.PlaneGeometry(20, 20)
+      // const groundMaterial = new THREE.MeshLambertMaterial({ color: 0x90EE90 })
+      // const ground = new THREE.Mesh(groundGeometry, groundMaterial)
+      // ground.rotation.x = -Math.PI / 2
+      // ground.name = 'ground'
+      // scene.add(ground)
 
       // 添加几个简单的立方体作为参考
       for (let i = 0; i < 3; i++) {
@@ -228,7 +234,7 @@ export function useTextMarker() {
         scene.add(cube)
       }
 
-      debugLogger?.('参考物体创建完成', 'info')
+      debugLogger?.('参考物体创建完成（已禁用地面）', 'info')
     } catch (error) {
       debugLogger?.(`参考物体创建失败: ${error.message}`, 'error')
     }

@@ -242,8 +242,11 @@ onUnmounted(() => {
   top: 0;
   left: 0;
   height: 100vh;
-  width: 100vw;
+  width: calc(100vw - 350px); /* 为控制面板留出空间 */
   background: #000;
+  z-index: 0;
+  /* 确保canvas可以响应鼠标事件 */
+  pointer-events: auto;
 }
 
 .control-panel {
@@ -252,12 +255,17 @@ onUnmounted(() => {
   right: 0;
   width: 350px;
   height: 100vh;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
   border-left: 1px solid #ddd;
   overflow-y: auto;
   padding: 16px;
   box-sizing: border-box;
-  z-index: 1;
+  z-index: 10;
+  /* 确保控制面板始终可以响应鼠标事件 */
+  pointer-events: auto;
+  /* 添加阴影以增强层次感 */
+  box-shadow: -2px 0 10px rgba(0, 0, 0, 0.1);
 }
 
 .panel-header {
@@ -343,10 +351,16 @@ onUnmounted(() => {
   padding: 4px 8px;
   border: 1px solid #ddd;
   border-radius: 4px;
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
 }
 
 .config-row input[type="range"] {
   flex: 1;
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
 }
 
 .config-row input[type="color"] {
@@ -355,6 +369,9 @@ onUnmounted(() => {
   border: 1px solid #ddd;
   border-radius: 4px;
   cursor: pointer;
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
 }
 
 .config-row span {
@@ -466,6 +483,10 @@ button {
   cursor: pointer;
   font-size: 14px;
   transition: all 0.2s;
+  /* 确保按钮始终可以交互 */
+  pointer-events: auto;
+  position: relative;
+  z-index: 1;
 }
 
 button:disabled {
