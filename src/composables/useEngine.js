@@ -48,19 +48,7 @@ export function useEngine(options = {}) {
                 axesHelper: false,
               },
               floorConfig: {
-                enabled: true,
-                type: "water",
-                size: 100000,
-                position: [0, 0, 0],
-                waterConfig: {
-                  color: 0x001e0f,
-                  sunColor: 0xffffff,
-                  distortionScale: 3.7,
-                  textureWidth: 512,
-                  textureHeight: 512,
-                  alpha: 1.0,
-                  time: 0
-                }
+                enabled: false, // 禁用地板
               },
             },
           },
@@ -336,6 +324,155 @@ export function useEngine(options = {}) {
     return modelMarker;
   };
 
+  // 批量加载模型（新增功能）
+  const loadBatchModels = async (modelFiles, addDebugLog) => {
+    if (!engineInstance || !engineReady.value) {
+      addDebugLog("error", "❌ 引擎未就绪，无法批量加载模型");
+      return [];
+    }
+
+    const loadedModels = [];
+    const resourcePlugin = engineInstance.getPlugin("ResourceReaderPlugin");
+    
+    if (!resourcePlugin) {
+      addDebugLog("error", "❌ 资源加载插件未找到");
+      return [];
+    }
+
+    try {
+      addDebugLog("info", `📦 开始批量加载 ${modelFiles.length} 个模型...`);
+      
+      const loadPromises = modelFiles.map(async (modelPath, index) => {
+        try {
+          addDebugLog("info", `🔄 正在加载模型 ${index + 1}: ${modelPath}`);
+          
+          // 加载模型
+          const model = await resourcePlugin.loadModelAsync(
+            modelPath,
+            EngineKernel.TaskPriority.MEDIUM,
+            {
+              timeout: 30000,
+              retryCount: 1,
+              category: 'batch_load'
+            }
+          );
+
+          // 设置模型位置（在一个圆形区域内随机分布）
+          const angle = (index / modelFiles.length) * Math.PI * 2;
+          const radius = 50 + Math.random() * 100; // 50-150 的随机半径
+          const x = Math.cos(angle) * radius + (Math.random() - 0.5) * 20;
+          const z = Math.sin(angle) * radius + (Math.random() - 0.5) * 20;
+          const y = Math.random() * 10; // 0-10 的随机高度
+
+          model.position.set(x, y, z);
+          
+          // 随机旋转
+          model.rotation.y = Math.random() * Math.PI * 2;
+          
+          // 设置模型名称
+          model.name = `Model_${index + 1}_${modelPath.split('/').pop().split('.')[0]}`;
+          
+          // 添加到场景
+          baseScenePlugin.scene.add(model);
+          
+          addDebugLog("success", `✅ 模型 ${index + 1} 加载完成: ${model.name}`);
+          return model;
+          
+        } catch (error) {
+          addDebugLog("error", `❌ 模型 ${index + 1} 加载失败: ${error.message}`);
+          return null;
+        }
+      });
+
+      // 等待所有模型加载完成
+      const results = await Promise.allSettled(loadPromises);
+      
+      // 统计加载结果
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled' && result.value) {
+          loadedModels.push(result.value);
+        }
+      });
+
+      addDebugLog("success", `🎉 批量加载完成！成功加载 ${loadedModels.length}/${modelFiles.length} 个模型`);
+      return loadedModels;
+
+    } catch (error) {
+      addDebugLog("error", `❌ 批量加载模型出错: ${error.message}`);
+      return loadedModels;
+    }
+  };
+
+  // 加载马模型并设置路径动画
+  const loadHorseWithAnimation = async (addDebugLog) => {
+    if (!engineInstance || !engineReady.value) {
+      addDebugLog("error", "❌ 引擎未就绪，无法加载马模型");
+      return null;
+    }
+
+    try {
+      addDebugLog("info", "🐎 开始加载马模型...");
+      const resourcePlugin = engineInstance.getPlugin("ResourceReaderPlugin");
+
+      const horseModel = await resourcePlugin.loadModelAsync(
+        "/static/model/Horse.glb",
+        EngineKernel.TaskPriority.HIGH,
+        {
+          timeout: 30000,
+          retryCount: 2,
+          category: 'character'
+        }
+      );
+
+      // 设置马模型的初始位置
+      horseModel.position.set(0, 0, 0);
+      horseModel.name = "AnimatedHorse";
+      
+      // 调整模型材质
+      horseModel.traverse((child) => {
+        if (child.material) {
+          child.material.needsUpdate = true;
+        }
+      });
+
+      baseScenePlugin.scene.add(horseModel);
+      addDebugLog("success", "✅ 马模型加载完成，准备设置动画");
+
+      return horseModel;
+
+    } catch (error) {
+      addDebugLog("error", `❌ 马模型加载失败: ${error.message}`);
+      return null;
+    }
+  };
+
+  // 创建场景辅助对象（网格、坐标轴等）
+  const createSceneHelpers = (addDebugLog) => {
+    if (!baseScenePlugin) {
+      addDebugLog("error", "❌ 基础场景插件未就绪");
+      return;
+    }
+
+    try {
+      const scene = baseScenePlugin.scene;
+
+      // 创建网格辅助线
+      const gridHelper = new EngineKernel.THREE.GridHelper(1000, 100, 0x444444, 0x444444);
+      gridHelper.name = "GridHelper";
+      scene.add(gridHelper);
+
+      // 创建坐标轴辅助线
+      const axesHelper = new EngineKernel.THREE.AxesHelper(100);
+      axesHelper.name = "AxesHelper";
+      scene.add(axesHelper);
+
+      addDebugLog("success", "✅ 场景辅助对象创建完成");
+
+    } catch (error) {
+      addDebugLog("error", `❌ 创建场景辅助对象失败: ${error.message}`);
+    }
+  };
+
   // 设置调试模式（占位符函数）
   const setDebugMode = (enabled, addDebugLog) => {
     if (addDebugLog) {
@@ -351,6 +488,9 @@ export function useEngine(options = {}) {
     // 方法
     initializeEngine,
     loadModel,
+    loadBatchModels,
+    loadHorseWithAnimation,
+    createSceneHelpers,
     resetCamera,
     toggleSkybox,
     showCacheStatus,
