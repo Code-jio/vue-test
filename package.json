@@ -10,9 +10,7 @@
     "filecheck": "node public/filecheck.cjs"
   },
   "dependencies": {
-    "@types/three": "^0.177.0",
     "mitt": "^3.0.1",
-    "three": "^0.177.0",
     "vue": "^3.4.27",
     "vue-router": "^4.3.2",
     "workbox-window": "^7.3.0"
