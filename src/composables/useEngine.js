@@ -477,79 +477,52 @@ export function useEngine(options = {}) {
     }
   };
 
-  // 加载马模型并设置路径动画
-  const loadHorseWithAnimation = async (addDebugLog) => {
-    if (!engineInstance || !engineReady.value) {
-      addDebugLog("error", "❌ 引擎未就绪，无法加载马模型");
-      return null;
-    }
+  // // 加载马模型并设置路径动画
+  // const loadHorseWithAnimation = async (addDebugLog) => {
+  //   if (!engineInstance || !engineReady.value) {
+  //     addDebugLog("error", "❌ 引擎未就绪，无法加载马模型");
+  //     return null;
+  //   }
 
-    try {
-      addDebugLog("info", "🐎 开始加载马模型...");
-      const resourcePlugin = engineInstance.getPlugin("ResourceReaderPlugin");
+  //   try {
+  //     addDebugLog("info", "🐎 开始加载马模型...");
+  //     const resourcePlugin = engineInstance.getPlugin("ResourceReaderPlugin");
 
-      const horseModel = await resourcePlugin.loadModelAsync(
-        "/static/model/Horse.glb",
-        EngineKernel.TaskPriority.HIGH,
-        {
-          timeout: 30000,
-          retryCount: 2,
-          category: 'character'
-        }
-      );
+  //     // const horseModel = await resourcePlugin.loadModelAsync(
+  //     //   "/static/model/Horse.glb",
+  //     //   EngineKernel.TaskPriority.HIGH,
+  //     //   {
+  //     //     timeout: 30000,
+  //     //     retryCount: 2,
+  //     //     category: 'character'
+  //     //   }
+  //     // );
 
-      // 设置马模型的初始位置
-      horseModel.position.set(0, 0, 0);
-      horseModel.scale.set(0.1, 0.1, 0.1);
+  //     // // 设置马模型的初始位置
+  //     // horseModel.position.set(0, 0, 0);
+  //     // horseModel.scale.set(0.1, 0.1, 0.1);
       
-      // 设置模型名称（包括子对象）
-      const fileName = extractFileNameFromPath("/static/model/Horse.glb");
-      setModelNamesRecursively(horseModel, "AnimatedHorse", fileName);
+  //     // // 设置模型名称（包括子对象）
+  //     // const fileName = extractFileNameFromPath("/static/model/Horse.glb");
+  //     // setModelNamesRecursively(horseModel, "AnimatedHorse", fileName);
       
-      // 调整模型材质
-      horseModel.traverse((child) => {
-        if (child.material) {
-          child.material.needsUpdate = true;
-        }
-      });
+  //     // // 调整模型材质
+  //     // horseModel.traverse((child) => {
+  //     //   if (child.material) {
+  //     //     child.material.needsUpdate = true;
+  //     //   }
+  //     // });
 
-      baseScenePlugin.scene.add(horseModel);
-      addDebugLog("success", "✅ 马模型加载完成，准备设置动画");
+  //     // baseScenePlugin.scene.add(horseModel);
+  //     // addDebugLog("success", "✅ 马模型加载完成，准备设置动画");
 
-      return horseModel;
+  //     // return horseModel;
 
-    } catch (error) {
-      addDebugLog("error", `❌ 马模型加载失败: ${error.message}`);
-      return null;
-    }
-  };
-
-  // 创建场景辅助对象（网格、坐标轴等）
-  const createSceneHelpers = (addDebugLog) => {
-    if (!baseScenePlugin) {
-      addDebugLog("error", "❌ 基础场景插件未就绪");
-      return;
-    }
-
-    try {
-      const scene = baseScenePlugin.scene;
-
-      // 创建网格辅助线
-      const gridHelper = new EngineKernel.THREE.GridHelper(1000, 100, 0x444444, 0x444444);
-      gridHelper.name = "GridHelper";
-      scene.add(gridHelper);
-
-      // 创建坐标轴辅助线
-      const axesHelper = new EngineKernel.THREE.AxesHelper(100);
-      axesHelper.name = "AxesHelper";
-      scene.add(axesHelper);
-
-      addDebugLog("success", "✅ 场景辅助对象创建完成");
-
-    } catch (error) {
-      addDebugLog("error", `❌ 创建场景辅助对象失败: ${error.message}`);
-    }
-  };
+  //   } catch (error) {
+  //     addDebugLog("error", `❌ 马模型加载失败: ${error.message}`);
+  //     return null;
+  //   }
+  // };
 
   // 设置调试模式（占位符函数）
   const setDebugMode = (enabled, addDebugLog) => {
@@ -567,8 +540,7 @@ export function useEngine(options = {}) {
     initializeEngine,
     loadModel,
     loadBatchModels,
-    loadHorseWithAnimation,
-    createSceneHelpers,
+    // loadHorseWithAnimation,
     resetCamera,
     toggleSkybox,
     showCacheStatus,

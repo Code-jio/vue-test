@@ -40,7 +40,7 @@ const toggleNav = () => {
     </nav>
     
     <!-- 折叠的导航按钮 -->
-    <button v-if="!showNav" class="nav-toggle-mini" @click="toggleNav">📋</button>
+    <!-- <button v-if="!showNav" class="nav-toggle-mini" @click="toggleNav">📋</button> -->
 
     <!-- 路由视图 -->
     <router-view />

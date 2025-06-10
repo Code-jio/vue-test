@@ -5,7 +5,7 @@ import CSS3DExampleView from '@/views/CSS3DExample.vue'
 import TextMarkerTestView from '@/views/TextMarkerTestView.vue'
 import HDRSkyTestView from '@/views/HDRSkyTest.vue'
 import HDRSkyBasicExampleView from '@/views/HDRSkyBasicExample.vue'
-import ModelLoadTestView from '@/views/modelLoadTest.vue'
+import ModelLoadTestView from '@/views/ModelLoadTest.vue'
 import AsyncLoadingTestView from '@/views/AsyncLoadingTestView.vue'
 // import CSS3DAdvancedView from '@/views/CSS3DAdvanced.vue'
 
@@ -14,7 +14,7 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      redirect: '/async-loading-test'
+      redirect: '/engine-prototype'
     },
     {
       path: '/webgl-test',
