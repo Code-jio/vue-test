@@ -1,21 +1,10 @@
 {
-  "totalCount": 15,
+  "totalCount": 4,
   "files": [
-    "model\\01.gltf",
-    "model\\02.gltf",
-    "model\\03.gltf",
-    "model\\04.gltf",
-    "model\\05.gltf",
-    "model\\06.gltf",
-    "model\\07.gltf",
-    "model\\08.gltf",
-    "model\\09.gltf",
-    "model\\10.gltf",
-    "model\\11.gltf",
-    "model\\12.gltf",
-    "model\\13.gltf",
-    "model\\14.gltf",
-    "model\\15.gltf"
+    "model\\SM_JZ_01.gltf",
+    "model\\SM_JZ_1FBF_01.gltf",
+    "model\\SM_JZ_2FBF_01.gltf",
+    "model\\SM_JZ_3FBF_01.gltf"
   ],
-  "scanTime": "2025-06-06T06:57:49.497Z"
+  "scanTime": "2025-06-10T01:54:38.925Z"
 }

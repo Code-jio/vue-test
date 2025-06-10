@@ -68,7 +68,7 @@ function saveToJson(filePaths, outputFile) {
 
 // 主程序执行
 function main() {
-    const modelDir = path.join(__dirname, 'model');
+    const modelDir = path.join(__dirname, 'test');
     const outputFile = path.join(__dirname, 'model-files.json');
     
     console.log('开始扫描模型文件...');

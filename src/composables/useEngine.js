@@ -1,5 +1,62 @@
 import { ref, nextTick } from "vue";
 
+/**
+ * 从文件路径中提取文件名（不包含扩展名）
+ */
+function extractFileNameFromPath(filePath) {
+  if (!filePath) {
+    return `model_${Date.now()}`
+  }
+
+  try {
+    // 处理各种路径格式
+    const cleanPath = filePath.replace(/\\/g, '/')
+    const pathParts = cleanPath.split('/')
+    const fullFileName = pathParts[pathParts.length - 1]
+    
+    // 移除文件扩展名
+    const dotIndex = fullFileName.lastIndexOf('.')
+    const fileNameWithoutExt = dotIndex > 0 ? fullFileName.substring(0, dotIndex) : fullFileName
+    
+    // 清理文件名，移除特殊字符
+    const cleanFileName = fileNameWithoutExt.replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g, '_')
+    
+    return cleanFileName || `model_${Date.now()}`
+  } catch (error) {
+    console.warn('文件名提取失败，使用默认名称:', error)
+    return `model_${Date.now()}`
+  }
+}
+
+/**
+ * 递归设置模型及其子对象的名称
+ */
+function setModelNamesRecursively(object, baseName, fileName) {
+  if (!object) return
+  
+  // 设置根对象名称
+  object.name = baseName
+  
+  // 为子对象设置名称
+  let childIndex = 0
+  object.traverse((child) => {
+    if (child !== object) { // 跳过根对象本身
+      if (child.type === 'Mesh') {
+        child.name = `${fileName}_mesh_${childIndex}`
+      } else if (child.type === 'Group') {
+        child.name = `${fileName}_group_${childIndex}`
+      } else if (child.type === 'Object3D') {
+        child.name = `${fileName}_object_${childIndex}`
+      } else {
+        child.name = `${fileName}_${child.type.toLowerCase()}_${childIndex}`
+      }
+      childIndex++
+    }
+  })
+  
+  console.log(`🏷️ 模型名称设置完成: ${baseName}, 子对象数量: ${object.children.length}`)
+}
+
 // 引擎核心功能管理
 export function useEngine(options = {}) {
   // 响应式状态
@@ -373,13 +430,17 @@ export function useEngine(options = {}) {
           // // 随机旋转
           // model.rotation.y = Math.random() * Math.PI * 2;
           
-          // 设置模型名称
-          model.name = `Model_${index + 1}_${modelPath.split('/').pop().split('.')[0]}`;
+          // 提取文件名并设置模型名称
+          const fileName = extractFileNameFromPath(modelPath);
+          const modelName = `${index + 1}_${fileName}`;
+          
+          // 设置模型名称（包括子对象）
+          setModelNamesRecursively(model, modelName, fileName);
           
           // 添加到场景
           baseScenePlugin.scene.add(model);
           
-          addDebugLog("success", `✅ 模型 ${index + 1} 加载完成: ${model.name}`);
+          addDebugLog("success", `✅ 模型 ${index + 1} 加载完成: ${modelName}`);
           return model;
           
         } catch (error) {
@@ -440,7 +501,10 @@ export function useEngine(options = {}) {
       // 设置马模型的初始位置
       horseModel.position.set(0, 0, 0);
       horseModel.scale.set(0.1, 0.1, 0.1);
-      horseModel.name = "AnimatedHorse";
+      
+      // 设置模型名称（包括子对象）
+      const fileName = extractFileNameFromPath("/static/model/Horse.glb");
+      setModelNamesRecursively(horseModel, "AnimatedHorse", fileName);
       
       // 调整模型材质
       horseModel.traverse((child) => {
