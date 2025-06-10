@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node public/filecheck.cjs test && vite --host",
+    "dev": "node public/filecheck.cjs model && vite --host",
     "build": "vite build",
     "preview": "vite preview",
     "filecheck": "node public/filecheck.cjs"

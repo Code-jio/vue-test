@@ -1004,69 +1004,7 @@ const testCSS3DDisplay = () => {
   }
 };
 
-// 禁用场景辅助器（坐标轴和网格）
-const disableSceneHelpers = () => {
-  try {
-    const baseScenePlugin = getBaseScenePlugin();
-    if (!baseScenePlugin) {
-      addDebugLog("warning", "⚠️ 基础场景插件未找到，跳过辅助器禁用");
-      return;
-    }
 
-    // 简单的禁用尝试，不影响其他功能
-    if (typeof baseScenePlugin.toggleGridHelper === "function") {
-      baseScenePlugin.toggleGridHelper(false);
-      addDebugLog("info", "🔧 已禁用网格辅助器");
-    }
-
-    if (typeof baseScenePlugin.toggleAxesHelper === "function") {
-      baseScenePlugin.toggleAxesHelper(false);
-      addDebugLog("info", "🔧 已禁用坐标轴辅助器");
-    }
-  } catch (error) {
-    addDebugLog("warning", `⚠️ 禁用辅助器时出错，但不影响其他功能: ${error.message}`);
-  }
-};
-
-// 切换场景辅助器显示/隐藏
-const toggleSceneHelpers = () => {
-  try {
-    const baseScenePlugin = getBaseScenePlugin();
-    if (!baseScenePlugin) {
-      addDebugLog("warning", "⚠️ 基础场景插件未找到");
-      return;
-    }
-
-    addDebugLog("info", "🔄 切换场景辅助器显示状态...");
-
-    // 获取当前Debug状态
-    let debugStatus = null;
-    if (typeof baseScenePlugin.getDebugStatus === "function") {
-      debugStatus = baseScenePlugin.getDebugStatus();
-    }
-
-    // 切换网格辅助器
-    if (typeof baseScenePlugin.toggleGridHelper === "function") {
-      baseScenePlugin.toggleGridHelper();
-      addDebugLog("info", "📐 网格辅助器已切换");
-    }
-
-    // 切换坐标轴辅助器
-    if (typeof baseScenePlugin.toggleAxesHelper === "function") {
-      baseScenePlugin.toggleAxesHelper();
-      addDebugLog("info", "🎯 坐标轴辅助器已切换");
-    }
-
-    // 显示当前状态
-    if (debugStatus) {
-      const newStatus = baseScenePlugin.getDebugStatus();
-      addDebugLog("info", `🔍 当前状态: 网格=${newStatus.gridHelper.enabled ? '显示' : '隐藏'}, 坐标轴=${newStatus.axesHelper.enabled ? '显示' : '隐藏'}`);
-    }
-
-  } catch (error) {
-    addDebugLog("error", `❌ 切换场景辅助器失败: ${error.message}`);
-  }
-};
 
 // 创建替代几何体（当模型加载失败时）
 const createFallbackGeometry = () => {
@@ -1235,8 +1173,7 @@ const initializeApplication = async () => {
     }
 
 
-    // 2.5. 禁用坐标轴和网格辅助器
-    disableSceneHelpers();
+
 
     // 3. 初始化插件
     await initializeMousePick();
@@ -1281,7 +1218,7 @@ const initializeApplication = async () => {
       // 显示快捷键提示
       addDebugLog(
         "info",
-        "⌨️ 快捷键提示: R=重置相机, H=隐藏面板, T=测试控制器, C=测试CSS3D, X=清除轨迹, F=聚焦中心, G=聚焦马模型, V=切换辅助器"
+        "⌨️ 快捷键提示: R=重置相机, H=隐藏面板, T=测试控制器, C=测试CSS3D, X=清除轨迹, F=聚焦中心, G=聚焦马模型"
       );
     }, 2000);
   } catch (error) {
@@ -1346,10 +1283,7 @@ const setupKeyboardControls = () => {
           addDebugLog("warning", "⚠️ 马模型不存在，无法聚焦");
         }
         break;
-      case "v":
-        // V键切换辅助器显示/隐藏
-        toggleSceneHelpers();
-        break;
+
     }
   };
 
