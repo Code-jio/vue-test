@@ -92,7 +92,7 @@ const floorControlVisible = ref(false);
 let mousePickPlugin = null;
 let css3dPlugin = null;
 let css3dInfoInstance = null;
-let floorControlPlugin = null;
+let buildingControlPlugin = null;
 
 // 动画相关
 let animationId = null;
@@ -121,8 +121,8 @@ const handleFocusFloor = () => {
 
 const handleExpandDistanceChange = (event) => {
   const value = parseInt(event.target.value);
-  if (floorControlPlugin) {
-    floorControlPlugin.updateConfig({ expandDistance: value });
+  if (buildingControlPlugin) {
+    buildingControlPlugin.updateConfig({ expandDistance: value });
   }
   const distanceValue = document.getElementById('distanceValue');
   if (distanceValue) distanceValue.textContent = value.toString();
@@ -130,8 +130,8 @@ const handleExpandDistanceChange = (event) => {
 
 const handleAnimationSpeedChange = (event) => {
   const value = parseInt(event.target.value);
-  if (floorControlPlugin) {
-    floorControlPlugin.updateConfig({ animationDuration: value });
+  if (buildingControlPlugin) {
+    buildingControlPlugin.updateConfig({ animationDuration: value });
   }
   const speedValue = document.getElementById('speedValue');
   if (speedValue) speedValue.textContent = `${(value / 1000).toFixed(1)}s`;
@@ -606,11 +606,11 @@ const initializeFloorControl = async () => {
 
     // 注册楼层控件插件
     engineInstance.register({
-      name: "FloorControlPlugin",
-      path: "/plugins/webgl/floorControlPlugin",
-      pluginClass: EngineKernel.FloorControlPlugin,
+      name: "BuildingControlPlugin",
+      path: "/plugins/webgl/BuildingControlPlugin",
+      pluginClass: EngineKernel.BuildingControlPlugin,
       userData: {
-        floorControlConfig: {
+        BuildingControlConfig: {
           expandDistance: 80,
           animationDuration: 1500,
           focusOpacity: 1.0,
@@ -631,9 +631,9 @@ const initializeFloorControl = async () => {
     });
 
     // 获取插件实例
-    floorControlPlugin = engineInstance.getPlugin("FloorControlPlugin");
+    buildingControlPlugin = engineInstance.getPlugin("BuildingControlPlugin");
 
-    if (floorControlPlugin) {
+    if (buildingControlPlugin) {
       // 检查是否有当前建筑模型
       if (currentBuildingModel.value) {
         setCurrentBuildingModel(currentBuildingModel.value);
@@ -648,11 +648,11 @@ const initializeFloorControl = async () => {
 
 // 设置当前建筑模型
 const setCurrentBuildingModel = (model) => {
-  if (!floorControlPlugin || !model) return;
+  if (!buildingControlPlugin || !model) return;
 
   // 检查是否为建筑模型
   if (model.userData && model.userData.isBuildingModel) {
-    const success = floorControlPlugin.setBuildingModel(model);
+    const success = buildingControlPlugin.setBuildingModel(model);
     if (success) {
       currentBuildingModel.value = model;
       floorControlVisible.value = true; // 显示楼层控件面板
@@ -663,9 +663,9 @@ const setCurrentBuildingModel = (model) => {
 
 // 更新楼层控件UI
 const updateFloorControlUI = () => {
-  if (!floorControlPlugin) return;
+  if (!buildingControlPlugin) return;
 
-  const floorInfo = floorControlPlugin.getFloorInfo();
+  const floorInfo = buildingControlPlugin.getFloorInfo();
 
   // 更新楼层选择器
   const floorSelect = document.getElementById('floorSelect');
@@ -685,9 +685,9 @@ const updateFloorControlUI = () => {
 
 // 更新楼层控件状态信息
 const updateFloorControlStatus = () => {
-  if (!floorControlPlugin) return;
+  if (!buildingControlPlugin) return;
 
-  const floorInfo = floorControlPlugin.getFloorInfo();
+  const floorInfo = buildingControlPlugin.getFloorInfo();
   const statusElement = document.getElementById('floorControlStatus');
 
   if (statusElement) {
@@ -714,42 +714,102 @@ const updateFloorControlStatus = () => {
   }
 };
 
-// 楼层控件操作函数
-const expandFloors = async () => {
-  if (!floorControlPlugin) return;
-  await floorControlPlugin.expandFloors();
+// 自动查找并设置建筑模型的辅助函数
+const ensureBuildingModel = () => {
+  if (currentBuildingModel.value) return true;
+  
+  console.warn('⚠️ 请先选择一个建筑模型（点击场景中的建筑对象）');
+  // 尝试从场景中查找建筑模型
+  const baseScenePlugin = getBaseScenePlugin();
+  if (baseScenePlugin && baseScenePlugin.scene) {
+    let foundBuilding = null;
+    baseScenePlugin.scene.traverse((child) => {
+      if (child.userData && child.userData.isBuildingModel && !foundBuilding) {
+        foundBuilding = child;
+      }
+    });
+    
+    if (foundBuilding) {
+      console.log('🏢 找到建筑模型，自动设置:', foundBuilding.name);
+      setCurrentBuildingModel(foundBuilding);
+      return true;
+    } else {
+      console.warn('❌ 场景中未找到任何建筑模型');
+      return false;
+    }
+  }
+  return false;
+};
+
+// 楼层展开
+window.expandFloors = async () => {
+  if (!buildingControlPlugin) {
+    console.warn('⚠️ 楼层控制插件未初始化');
+    return;
+  }
+  if (!ensureBuildingModel()) return;
+  
+  await buildingControlPlugin.expandFloors();
   updateFloorControlStatus();
 };
 
-const collapseFloors = async () => {
-  if (!floorControlPlugin) return;
-  await floorControlPlugin.collapseFloors();
+// 楼层收回
+window.collapseFloors = async () => {
+  if (!buildingControlPlugin) {
+    console.warn('⚠️ 楼层控制插件未初始化');
+    return;
+  }
+  if (!ensureBuildingModel()) return;
+  
+  await buildingControlPlugin.collapseFloors();
   updateFloorControlStatus();
 };
 
-const focusOnFloor = async (floorNumber) => {
-  if (!floorControlPlugin || !floorNumber) return;
-  await floorControlPlugin.focusOnFloor(parseInt(floorNumber));
+// 聚焦到楼层
+window.focusOnFloor = async (floorNumber) => {
+  if (!buildingControlPlugin) {
+    console.warn('⚠️ 楼层控制插件未初始化');
+    return;
+  }
+  if (!floorNumber) {
+    console.warn('⚠️ 请指定楼层号');
+    return;
+  }
+  if (!ensureBuildingModel()) return;
+  
+  await buildingControlPlugin.focusOnFloor(parseInt(floorNumber));
   updateFloorControlStatus();
 };
 
-const showAllFloors = async () => {
-  if (!floorControlPlugin) return;
-  await floorControlPlugin.showAllFloors();
+// 显示所有楼层
+window.showAllFloors = async () => {
+  if (!buildingControlPlugin) {
+    console.warn('⚠️ 楼层控制插件未初始化');
+    return;
+  }
+  if (!ensureBuildingModel()) return;
+  
+  await buildingControlPlugin.showAllFloors();
   updateFloorControlStatus();
 };
-
-const toggleFacade = () => {
-  if (!floorControlPlugin) return;
-  const floorInfo = floorControlPlugin.getFloorInfo();
-  floorControlPlugin.setFacadeVisibility(floorInfo.currentState === 'NORMAL');
+// 显示/隐藏建筑外立面
+window.toggleFacade = (flag) => {
+  if (!buildingControlPlugin) {
+    console.warn('⚠️ 楼层控制插件未初始化');
+    return;
+  }
+  if (!ensureBuildingModel()) return;
+  
+  const floorInfo = buildingControlPlugin.getFloorInfo();
+  console.log('当前楼层状态:', floorInfo.currentState);
+  buildingControlPlugin.setFacadeVisibility(flag);
 };
 
 // 隐藏楼层控件面板
 const hideFloorControl = () => {
   floorControlVisible.value = false;
-  if (floorControlPlugin) {
-    floorControlPlugin.collapseFloors();
+  if (buildingControlPlugin) {
+    buildingControlPlugin.collapseFloors();
   }
 };
 
@@ -757,8 +817,8 @@ const hideFloorControl = () => {
 const startAnimationLoop = () => {
   const animate = () => {
     // 更新楼层控件动画
-    if (floorControlPlugin) {
-      floorControlPlugin.update();
+    if (buildingControlPlugin) {
+      buildingControlPlugin.update();
     }
     requestAnimationFrame(animate);
   };
@@ -863,8 +923,8 @@ onUnmounted(() => {
   }
 
   // 清理楼层控件
-  if (floorControlPlugin) {
-    floorControlPlugin.destroy();
+  if (buildingControlPlugin) {
+    buildingControlPlugin.destroy();
   }
 
   // 清理键盘事件监听器

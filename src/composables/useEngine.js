@@ -29,32 +29,15 @@ function extractFileNameFromPath(filePath) {
 }
 
 /**
- * 递归设置模型及其子对象的名称
+ * 设置模型根对象的名称
  */
-function setModelNamesRecursively(object, baseName, fileName) {
+function setModelName(object, baseName) {
   if (!object) return
   
-  // 设置根对象名称
+  // 只设置根对象名称，不再设置子对象名称
   object.name = baseName
   
-  // 为子对象设置名称
-  let childIndex = 0
-  object.traverse((child) => {
-    if (child !== object) { // 跳过根对象本身
-      if (child.type === 'Mesh') {
-        child.name = `${fileName}_mesh_${childIndex}`
-      } else if (child.type === 'Group') {
-        child.name = `${fileName}_group_${childIndex}`
-      } else if (child.type === 'Object3D') {
-        child.name = `${fileName}_object_${childIndex}`
-      } else {
-        child.name = `${fileName}_${child.type.toLowerCase()}_${childIndex}`
-      }
-      childIndex++
-    }
-  })
-  
-  console.log(`🏷️ 模型名称设置完成: ${baseName}, 子对象数量: ${object.children.length}`)
+  console.log(`🏷️ 模型名称设置完成: ${baseName}`)
 }
 
 // 引擎核心功能管理
@@ -410,8 +393,8 @@ export function useEngine(options = {}) {
           const fileName = extractFileNameFromPath(modelPath);
           const modelName = `${index + 1}_${fileName}`;
           
-          // 设置模型名称（包括子对象）
-          setModelNamesRecursively(model, modelName, fileName);
+          // 只设置模型根对象名称
+          setModelName(model, modelName);
           
           // 添加到场景
           baseScenePlugin.scene.add(model);

@@ -47,6 +47,7 @@ interface PickResult {
     geometryType?: string;
     worldMatrix: THREE.Matrix4;
     boundingBox?: THREE.Box3;
+    objectList?: THREE.Object3D[];
 }
 interface PickConfig {
     mode: PickMode;
