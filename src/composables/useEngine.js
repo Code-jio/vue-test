@@ -104,7 +104,12 @@ export function useEngine(options = {}) {
                 axesHelper: false,
               },
               floorConfig: {
-                enabled: false, // 禁用地板
+                enabled: true,
+                type: 'static',
+                staticConfig: {
+                  tiling: [25, 25], // 图片铺满
+                  texture: './textures/floor.png' // 你的图片路径
+                }
               },
             },
           },
@@ -154,9 +159,6 @@ export function useEngine(options = {}) {
     addDebugLog,
     customSkyBoxConfig = null
   ) => {
-    // 注意：BaseControls控制器现在已经集成到BaseScene中，无需单独注册
-    addDebugLog("info", "🎮 控制器已集成到BaseScene中，无需单独注册");
-    
     engineInstance
       .register({
         name: "ModelMarkerPlugin",
@@ -177,7 +179,10 @@ export function useEngine(options = {}) {
           scene: baseScenePlugin.scene,
           camera: baseScenePlugin.camera,
           renderer: baseScenePlugin.renderer,
-          skyBoxType: EngineKernel.SkyBoxType.PROCEDURAL_SKY,
+          skyBoxType: EngineKernel.SkyBoxType.HDR_ENVIRONMENT,
+          hdrMapPath: './skybox/SPACE018SN.hdr',
+          // hdrMapPath: './skybox/rustig_koppie_puresky_2k.hdr',
+          hdrIntensity: 1.0,
         },
       });
     } else {
