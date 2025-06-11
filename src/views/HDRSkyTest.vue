@@ -382,7 +382,7 @@ const handleLoadTestModel = async () => {
 
     // 使用新的异步API加载模型
     const model = await resourcePlugin.loadModelAsync(
-"/static/model/Horse.glb",
+      "/static/model/Horse.glb",
       EngineKernel.TaskPriority.HIGH,
       {
         timeout: 30000,

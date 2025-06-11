@@ -66,7 +66,6 @@ export function useEngine(options = {}) {
   // 引擎实例存储
   let engineInstance = null;
   let baseScenePlugin = null;
-  let orbitControlPlugin = null;
   let modelMarker = null;
 
   // 初始化三维引擎
@@ -155,16 +154,10 @@ export function useEngine(options = {}) {
     addDebugLog,
     customSkyBoxConfig = null
   ) => {
+    // 注意：BaseControls控制器现在已经集成到BaseScene中，无需单独注册
+    addDebugLog("info", "🎮 控制器已集成到BaseScene中，无需单独注册");
+    
     engineInstance
-      .register({
-        name: "orbitControl",
-        path: "/plugin/webgl/renderLoop",
-        pluginClass: EngineKernel.BaseControls,
-        userData: {
-          camera: baseScenePlugin.camera,
-          scene: baseScenePlugin.scene,
-        },
-      })
       .register({
         name: "ModelMarkerPlugin",
         path: "/plugins/webgl/3DModelMarker",
@@ -203,10 +196,9 @@ export function useEngine(options = {}) {
     }
 
     modelMarker = engineInstance.getPlugin("ModelMarkerPlugin");
-    orbitControlPlugin = engineInstance.getPlugin("orbitControl");
 
     // console.log(modelMarker, "模型标记插件")
-    addDebugLog("success", "✅ 轨道控制器插件加载完成");
+    addDebugLog("success", "✅ 插件注册完成");
   };
 
   // 引擎初始化完成处理
@@ -214,10 +206,11 @@ export function useEngine(options = {}) {
     try {
       addDebugLog("info", "🎯 引擎初始化完成，开始后续配置");
 
-      // 启动轨道控制器
-      if (orbitControlPlugin) {
-        orbitControlPlugin.initializeEventListeners();
-        addDebugLog("success", "🎮 轨道控制器启动完成");
+      // 验证控制器是否已集成到BaseScene中
+      if (baseScenePlugin && baseScenePlugin.controlsInstance) {
+        addDebugLog("success", "🎮 轨道控制器已集成到BaseScene中");
+      } else {
+        addDebugLog("warning", "⚠️ 控制器未在BaseScene中找到");
       }
 
       // 启动渲染循环
@@ -303,15 +296,23 @@ export function useEngine(options = {}) {
 
   // 重置相机位置
   const resetCamera = (addDebugLog) => {
-    if (!baseScenePlugin || !orbitControlPlugin) {
-      addDebugLog("warning", "⚠️ 基础场景或轨道控制器未就绪");
+    if (!baseScenePlugin) {
+      addDebugLog("warning", "⚠️ 基础场景未就绪");
       return;
     }
 
     try {
-      // 使用轨道控制器的专用重置方法
-      orbitControlPlugin.setCameraPosition(500, 500, 500, 0, 0, 0);
-      addDebugLog("info", "🎯 相机位置已重置");
+      // 使用BaseScene的控制器重置相机
+      if (baseScenePlugin.controlsInstance) {
+        baseScenePlugin.controlsInstance.setCameraPosition(500, 500, 500, 0, 0, 0);
+        addDebugLog("info", "🎯 相机位置已重置（通过BaseScene控制器）");
+      } else {
+        // 备用方法：直接设置相机位置
+        const camera = baseScenePlugin.getCurrentCamera();
+        camera.position.set(500, 500, 500);
+        camera.lookAt(0, 0, 0);
+        addDebugLog("info", "🎯 相机位置已重置（直接设置）");
+      }
     } catch (error) {
       addDebugLog("error", `❌ 重置相机失败: ${error.message}`);
     }
@@ -366,9 +367,13 @@ export function useEngine(options = {}) {
     return engineInstance;
   };
 
-  // 获取轨道控制器插件
+  // 获取轨道控制器插件（现在集成在BaseScene中）
   const getOrbitControlPlugin = () => {
-    return orbitControlPlugin;
+    // 控制器现在集成在BaseScene中，通过BaseScene获取
+    if (baseScenePlugin && baseScenePlugin.controlsInstance) {
+      return baseScenePlugin.controlsInstance; // 返回BaseControls实例
+    }
+    return null;
   };
 
   // 获取基础场景插件
