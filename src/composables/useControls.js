@@ -1,39 +1,5 @@
 // 键盘控制和交互功能管理
 export function useControls() {
-  
-  // 设置键盘控制
-  const setupKeyboardControls = (engineReady, resetCamera, addDebugLog) => {
-    const handleKeyPress = (event) => {
-      if (!engineReady.value) return
-
-      switch (event.key.toLowerCase()) {
-        case "r":
-          resetCamera()
-          addDebugLog("info", "🎯 键盘重置相机")
-          break
-        case "h":
-          addDebugLog("info", "💡 控制说明: R-重置相机")
-          break
-        case "escape":
-          // 可以添加退出全屏或其他功能
-          addDebugLog("info", "⌨️ ESC键按下")
-          break
-        case "f11":
-          // 阻止默认F11行为，自定义全屏逻辑
-          event.preventDefault()
-          toggleFullscreen(addDebugLog)
-          break
-      }
-    }
-
-    // 添加键盘监听
-    document.addEventListener("keydown", handleKeyPress)
-
-    // 返回清理函数
-    return () => {
-      document.removeEventListener("keydown", handleKeyPress)
-    }
-  }
 
   // 切换全屏
   const toggleFullscreen = (addDebugLog) => {
@@ -139,13 +105,9 @@ export function useControls() {
   // 自适应控制设置
   const setupAdaptiveControls = (engineReady, resetCamera, addDebugLog) => {
     const device = getDeviceType()
-    let keyboardCleanup = null
     let touchCleanup = null
 
     addDebugLog("info", `🖥️ 设备类型: ${device.isMobile ? '移动端' : device.isTablet ? '平板' : '桌面端'}`)
-
-    // 总是设置键盘控制
-    keyboardCleanup = setupKeyboardControls(engineReady, resetCamera, addDebugLog)
 
     // 触摸设备额外设置触摸控制
     if (device.hasTouch) {
@@ -155,7 +117,6 @@ export function useControls() {
 
     // 返回综合清理函数
     return () => {
-      if (keyboardCleanup) keyboardCleanup()
       if (touchCleanup) touchCleanup()
     }
   }
@@ -271,7 +232,6 @@ export function useControls() {
 
   return {
     // 方法
-    setupKeyboardControls,
     setupTouchControls,
     setupAdaptiveControls,
     toggleFullscreen,

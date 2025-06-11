@@ -17,3 +17,4 @@ export { LayerManager } from './webgl/layerManager';
 export { ModelMarker } from './webgl/3DModelMarker';
 export { MousePickPlugin } from './webgl/mousePickPlugin';
 export { TextMarkerPlugin } from "./webgl/textMarker";
+export { FloorControlPlugin } from './webgl/floorControlPlugin';

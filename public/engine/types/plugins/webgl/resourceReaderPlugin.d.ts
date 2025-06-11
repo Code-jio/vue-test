@@ -161,10 +161,6 @@ export declare class ResourceReaderPlugin extends BasePlugin {
      */
     private generateTaskId;
     /**
-     * 从URL中提取文件名（不包含扩展名）
-     */
-    private extractFileNameFromUrl;
-    /**
      * 添加到缓存
      */
     private addToCache;

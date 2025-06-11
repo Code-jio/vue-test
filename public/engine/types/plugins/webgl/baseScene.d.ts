@@ -1,5 +1,6 @@
 import { THREE, BasePlugin } from "../basePlugin";
 import { FloorConfig } from "./floorManager";
+import { BaseControls } from "./baseControl";
 /**
  * BaseScene - 基础场景插件（增强版）
  *
@@ -38,6 +39,22 @@ import { FloorConfig } from "./floorManager";
  * // 6. 获取地板信息
  * const floorInfo = scene.getFloorInfo()
  * console.log('地板信息:', floorInfo)
+ *
+ * 🎥 相机切换功能使用示例：
+ *
+ * // 1. 2D/3D相机切换
+ * scene.switchTo2D()        // 切换到2D俯视模式
+ * scene.switchTo3D()        // 切换到3D透视模式
+ * scene.toggleCameraMode()  // 自动切换模式
+ *
+ * // 2. 相机状态查询
+ * const mode = scene.getCameraMode()         // 获取当前模式 '2D' 或 '3D'
+ * const camera = scene.getCurrentCamera()    // 获取当前激活的相机
+ *
+ * // 3. 2D相机缩放控制
+ * const zoom = scene.get2DCameraZoom()       // 获取2D相机缩放
+ * scene.set2DCameraZoom(2.0)                 // 设置2D相机缩放
+ * scene.apply2DCameraZoomDelta(0.5)          // 增加缩放增量
  *
  * 支持的地板类型：
  * - water: 水面地板（参照three.js webgl_shaders_ocean）
@@ -79,6 +96,8 @@ export declare class BaseScene extends BasePlugin {
     private renderer;
     private pipelineManager;
     private directionalLight;
+    private controls;
+    private cameraConfig;
     private floorManager;
     private floorConfig;
     private performanceMonitor;
@@ -87,6 +106,14 @@ export declare class BaseScene extends BasePlugin {
     private debugHelpers;
     private _flyTween;
     constructor(meta: any);
+    /**
+     * 初始化控制器系统
+     */
+    private initializeControls;
+    /**
+     * 初始化双相机系统
+     */
+    private initializeDualCameraSystem;
     /**
      * 验证是否为有效的HTMLCanvasElement
      */
@@ -159,6 +186,7 @@ export declare class BaseScene extends BasePlugin {
     get sceneInstance(): THREE.Scene;
     get cameraInstance(): THREE.Camera;
     get rendererInstance(): THREE.WebGLRenderer;
+    get controlsInstance(): BaseControls | null;
     get isPerformanceMonitorEnabled(): boolean;
     /**
      * 静态工厂方法 - 创建高性能场景
@@ -327,5 +355,42 @@ export declare class BaseScene extends BasePlugin {
      * @param options 相机飞行配置参数
      */
     cameraFlyTo(options: CameraFlyToOptions): void;
+    /**
+     * 判断是否应该跳过该对象（天空盒等）
+     * @param object 要检查的三维对象
+     * @returns 是否应该跳过
+     */
+    private isSkipObject;
+    /**
+     * 计算对象的包围盒或包围球
+     * @param object 要计算边界的对象
+     * @returns 包围盒信息，如果无法计算则返回null
+     */
+    private calculateObjectBounds;
+    /**
+     * 递归遍历场景，收集所有有效的包围盒
+     * @param object 要遍历的对象
+     * @param boundingBoxes 收集包围盒的数组
+     */
+    private traverseSceneForBounds;
+    /**
+     * 初始化视角
+     * 自动计算场景中所有物体的包围盒，避开天空盒等特殊对象
+     * 递归查找几何体，优先使用包围盒，备选包围球
+     * 计算总包围盒和场景中心点，中心点高度设为0
+     */
+    initializeView(): {
+        center: THREE.Vector3;
+        boundingBox: THREE.Box3 | null;
+        objectCount: number;
+        hasValidBounds: boolean;
+    };
+    /**
+     * 自动计算最佳相机位置并飞行过去
+     * 使用等轴测视角，确保场景完整可见，注视场景中心点
+     */
+    autoFitScene(): void;
+    getCameraState(): any;
+    setCameraState(state: any): void;
 }
 export {};

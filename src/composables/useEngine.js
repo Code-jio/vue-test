@@ -69,10 +69,9 @@ export function useEngine(options = {}) {
   let modelMarker = null;
 
   // 初始化三维引擎
-  const initializeEngine = async (addDebugLog, customSkyBoxConfig = null) => {
+  const initializeEngine = async (customSkyBoxConfig = null) => {
     try {
       initStatus.value = "初始化中...";
-      addDebugLog("info", "🚀 开始初始化EngineKernel");
 
       // 确保DOM已经渲染
       await nextTick();
@@ -137,28 +136,21 @@ export function useEngine(options = {}) {
         );
       }
 
-      addDebugLog("success", "✅ 基础场景插件加载完成");
-
       // 注册其他插件（包含天空盒配置）
-      registerAdditionalPlugins(addDebugLog, customSkyBoxConfig);
+      registerAdditionalPlugins(customSkyBoxConfig);
 
       // 监听初始化完成事件
       engineInstance.on("init-complete", () =>
-        onEngineInitComplete(addDebugLog)
+        onEngineInitComplete()
       );
-      addDebugLog("success", "🎉 引擎核心初始化完成");
     } catch (error) {
       initStatus.value = "初始化失败";
-      addDebugLog("error", `❌ 引擎初始化失败: ${error.message}`);
       console.error("引擎初始化失败:", error);
     }
   };
 
   // 注册额外插件
-  const registerAdditionalPlugins = (
-    addDebugLog,
-    customSkyBoxConfig = null
-  ) => {
+  const registerAdditionalPlugins = (customSkyBoxConfig = null) => {
     engineInstance
       .register({
         name: "ModelMarkerPlugin",
@@ -180,8 +172,8 @@ export function useEngine(options = {}) {
           camera: baseScenePlugin.camera,
           renderer: baseScenePlugin.renderer,
           skyBoxType: EngineKernel.SkyBoxType.HDR_ENVIRONMENT,
-          hdrMapPath: './skybox/SPACE018SN.hdr',
-          // hdrMapPath: './skybox/rustig_koppie_puresky_2k.hdr',
+          // hdrMapPath: './skybox/SPACE018SN.hdr',
+          hdrMapPath: './skybox/rustig_koppie_puresky_2k.hdr',
           hdrIntensity: 1.0,
         },
       });
@@ -201,63 +193,48 @@ export function useEngine(options = {}) {
     }
 
     modelMarker = engineInstance.getPlugin("ModelMarkerPlugin");
-
-    // console.log(modelMarker, "模型标记插件")
-    addDebugLog("success", "✅ 插件注册完成");
   };
 
   // 引擎初始化完成处理
-  const onEngineInitComplete = (addDebugLog) => {
+  const onEngineInitComplete = () => {
     try {
-      addDebugLog("info", "🎯 引擎初始化完成，开始后续配置");
-
-      // 验证控制器是否已集成到BaseScene中
-      if (baseScenePlugin && baseScenePlugin.controlsInstance) {
-        addDebugLog("success", "🎮 轨道控制器已集成到BaseScene中");
-      } else {
-        addDebugLog("warning", "⚠️ 控制器未在BaseScene中找到");
-      }
-
       // 启动渲染循环
       const renderLoopPlugin = engineInstance.getPlugin("RenderLoopPlugin");
       if (renderLoopPlugin) {
         renderLoopPlugin.initialize();
-        addDebugLog("success", "🎬 渲染循环启动完成");
       }
 
       engineReady.value = true;
       initStatus.value = "运行中";
-      addDebugLog("success", "🚀 引擎完全就绪");
     } catch (error) {
-      addDebugLog("error", `❌ 引擎配置失败: ${error.message}`);
+      console.error("引擎配置失败:", error);
     }
   };
 
   // 加载模型（新的异步版本）
-  const loadModel = async (addDebugLog) => {
+  const loadModel = async () => {
     if (!engineInstance || !engineReady.value) return;
 
     try {
-      addDebugLog("info", "🐎 开始异步加载马模型...");
       const resourcePlugin = engineInstance.getPlugin("ResourceReaderPlugin");
 
       // 监听加载进度事件
       const progressHandler = (progress) => {
         if (progress.taskId && progress.percentage) {
-          addDebugLog("info", `📦 加载进度: ${progress.percentage.toFixed(2)}%`);
+          console.log(`加载进度: ${progress.percentage.toFixed(2)}%`);
         }
       };
 
       // 监听完成事件
       const completedHandler = (result) => {
         if (result.success) {
-          addDebugLog("success", `✅ 马模型异步加载完成 (${result.executionTime}ms)`);
+          console.log(`马模型异步加载完成 (${result.executionTime}ms)`);
         }
       };
 
       // 监听错误事件
       const errorHandler = (result) => {
-        addDebugLog("error", `❌ 模型异步加载失败: ${result.error?.message || '未知错误'}`);
+        console.error(`模型异步加载失败: ${result.error?.message || '未知错误'}`);
       };
 
       // 添加事件监听
@@ -287,7 +264,6 @@ export function useEngine(options = {}) {
 
       // 添加模型到场景
       baseScenePlugin.scene.add(model);
-      addDebugLog("success", "✅ 马模型已添加到场景");
 
       // 清理事件监听
       EngineKernel.eventBus.off('task:progress', progressHandler);
@@ -295,14 +271,13 @@ export function useEngine(options = {}) {
       EngineKernel.eventBus.off('task:failed', errorHandler);
 
     } catch (error) {
-      addDebugLog("error", `❌ 异步加载模型出错: ${error.message}`);
+      console.error(`异步加载模型出错: ${error.message}`);
     }
   };
 
   // 重置相机位置
-  const resetCamera = (addDebugLog) => {
+  const resetCamera = () => {
     if (!baseScenePlugin) {
-      addDebugLog("warning", "⚠️ 基础场景未就绪");
       return;
     }
 
@@ -310,26 +285,24 @@ export function useEngine(options = {}) {
       // 使用BaseScene的控制器重置相机
       if (baseScenePlugin.controlsInstance) {
         baseScenePlugin.controlsInstance.setCameraPosition(500, 500, 500, 0, 0, 0);
-        addDebugLog("info", "🎯 相机位置已重置（通过BaseScene控制器）");
       } else {
         // 备用方法：直接设置相机位置
         const camera = baseScenePlugin.getCurrentCamera();
         camera.position.set(500, 500, 500);
         camera.lookAt(0, 0, 0);
-        addDebugLog("info", "🎯 相机位置已重置（直接设置）");
       }
     } catch (error) {
-      addDebugLog("error", `❌ 重置相机失败: ${error.message}`);
+      console.error(`重置相机失败: ${error.message}`);
     }
   };
 
   // 切换天空盒
-  const toggleSkybox = (addDebugLog) => {
-    addDebugLog("info", "🌌 天空盒切换功能待实现");
+  const toggleSkybox = () => {
+    console.log("天空盒切换功能待实现");
   };
 
   // 显示缓存状态
-  const showCacheStatus = (addDebugLog) => {
+  const showCacheStatus = () => {
     if (!engineInstance) return;
 
     try {
@@ -337,33 +310,31 @@ export function useEngine(options = {}) {
       const cacheStatus = resourcePlugin.getCacheStatus();
       const taskStatus = resourcePlugin.getTasksStatus();
 
-      addDebugLog(
-        "info",
-        `📊 缓存: ${cacheStatus.itemCount}项, ${(
+      console.log(
+        `缓存: ${cacheStatus.itemCount}项, ${(
           cacheStatus.size /
           1024 /
           1024
         ).toFixed(2)}MB, 利用率${cacheStatus.utilization.toFixed(1)}%`
       );
-      addDebugLog(
-        "info",
-        `📋 任务: 等待${taskStatus.pending}, 加载中${taskStatus.loading}, 完成${taskStatus.completed}, 错误${taskStatus.error}`
+      console.log(
+        `任务: 等待${taskStatus.pending}, 加载中${taskStatus.loading}, 完成${taskStatus.completed}, 错误${taskStatus.error}`
       );
     } catch (error) {
-      addDebugLog("error", `❌ 获取缓存状态失败: ${error.message}`);
+      console.error(`获取缓存状态失败: ${error.message}`);
     }
   };
 
   // 清理资源缓存
-  const clearResourceCache = (addDebugLog) => {
+  const clearResourceCache = () => {
     if (!engineInstance) return;
 
     try {
       const resourcePlugin = engineInstance.getPlugin("ResourceReaderPlugin");
       resourcePlugin.clearCache();
-      addDebugLog("success", "🗑️ 资源缓存已清理");
+      console.log("资源缓存已清理");
     } catch (error) {
-      addDebugLog("error", `❌ 清理缓存失败: ${error.message}`);
+      console.error(`清理缓存失败: ${error.message}`);
     }
   };
 
@@ -392,9 +363,8 @@ export function useEngine(options = {}) {
   };
 
   // 批量加载模型（新增功能）
-  const loadBatchModels = async (modelFiles, addDebugLog) => {
+  const loadBatchModels = async (modelFiles) => {
     if (!engineInstance || !engineReady.value) {
-      addDebugLog("error", "❌ 引擎未就绪，无法批量加载模型");
       return [];
     }
 
@@ -402,20 +372,16 @@ export function useEngine(options = {}) {
     const resourcePlugin = engineInstance.getPlugin("ResourceReaderPlugin");
     
     if (!resourcePlugin) {
-      addDebugLog("error", "❌ 资源加载插件未找到");
       return [];
     }
 
     try {
-      addDebugLog("info", `📦 开始批量加载 ${modelFiles.length} 个模型...`);
       
       const loadPromises = modelFiles.map(async (modelPath, index) => {
         try {
           // 修复路径格式：替换反斜杠为正斜杠，并确保路径格式正确
           const fixedPath = modelPath.replace(/\\/g, '/');
           const fullPath = fixedPath.startsWith('/') ? fixedPath : `/${fixedPath}`;
-          
-          addDebugLog("info", `🔄 正在加载模型 ${index + 1}: ${fullPath}`);
           
           // 加载模型
           const model = await resourcePlugin.loadModelAsync(
@@ -450,17 +416,16 @@ export function useEngine(options = {}) {
           // 添加到场景
           baseScenePlugin.scene.add(model);
           
-          addDebugLog("success", `✅ 模型 ${index + 1} 加载完成: ${modelName}`);
           return model;
           
         } catch (error) {
-          addDebugLog("error", `❌ 模型 ${index + 1} (${fullPath}) 加载失败: ${error.message}`);
+          console.error(`模型 ${index + 1} (${fullPath}) 加载失败: ${error.message}`);
           
           // 检查是否是路径问题
           if (error.message.includes('404') || error.message.includes('Not Found')) {
-            addDebugLog("warning", `⚠️ 文件不存在: ${fullPath}`);
+            console.warn(`文件不存在: ${fullPath}`);
           } else if (error.message.includes('RangeError') || error.message.includes('Invalid typed array')) {
-            addDebugLog("warning", `⚠️ 文件格式问题: ${fullPath}`);
+            console.warn(`文件格式问题: ${fullPath}`);
           }
           
           return null;
@@ -477,12 +442,12 @@ export function useEngine(options = {}) {
         }
       });
 
-      addDebugLog("success", `🎉 批量加载完成！成功加载 ${loadedModels.length}/${modelFiles.length} 个模型`);
+      console.log(`批量加载完成！成功加载 ${loadedModels.length}/${modelFiles.length} 个模型`);
       console.timeEnd("场景初始化")
       return loadedModels;
 
     } catch (error) {
-      addDebugLog("error", `❌ 批量加载模型出错: ${error.message}`);
+      console.error(`批量加载模型出错: ${error.message}`);
       return loadedModels;
     }
   };
@@ -535,10 +500,8 @@ export function useEngine(options = {}) {
   // };
 
   // 设置调试模式（占位符函数）
-  const setDebugMode = (enabled, addDebugLog) => {
-    if (addDebugLog) {
-      addDebugLog("info", `🔧 调试模式${enabled ? "已启用" : "已禁用"}`);
-    }
+  const setDebugMode = (enabled) => {
+    console.log(`调试模式${enabled ? "已启用" : "已禁用"}`);
   };
 
   return {
