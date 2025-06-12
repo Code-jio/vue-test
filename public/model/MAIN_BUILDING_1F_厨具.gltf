@@ -19,7 +19,7 @@
         0.09999988,
         31.64513
       ],
-      "name": "Obj3d66-9690361-42-764"
+      "name": "MAIN_BUILDING_1F_厨具"
     }
   ],
   "meshes": [
@@ -34,7 +34,7 @@
           "indices": 0
         }
       ],
-      "name": "Obj3d66-9690361-42-764"
+      "name": "MAIN_BUILDING_1F_厨具"
     }
   ],
   "accessors": [
@@ -101,7 +101,7 @@
   ],
   "buffers": [
     {
-      "uri": "SM_JZ_1FBF_01.bin",
+      "uri": "MAIN_BUILDING_1F_厨具.bin",
       "byteLength": 3410268
     }
   ]

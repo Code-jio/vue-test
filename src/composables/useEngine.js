@@ -34,10 +34,31 @@ function extractFileNameFromPath(filePath) {
 function setModelName(object, baseName) {
   if (!object) return
   
-  // 只设置根对象名称，不再设置子对象名称
+  // 将名称存储到userData中（新的命名规则）
+  if (!object.userData) {
+    object.userData = {}
+  }
+  object.userData.modelName = baseName
+  
+  // 同时保留object.name用于显示和调试
   object.name = baseName
   
-  console.log(`🏷️ 模型名称设置完成: ${baseName}`)
+  console.log(`🏷️ 模型名称设置完成: ${baseName} (存储在userData.modelName中)`)
+}
+
+/**
+ * 获取模型名称（优先从userData.modelName读取）
+ */
+function getModelName(object) {
+  if (!object) return '未命名模型'
+  
+  // 优先使用userData.modelName
+  if (object.userData && object.userData.modelName) {
+    return object.userData.modelName
+  }
+  
+  // 向后兼容：如果userData.modelName不存在，使用object.name
+  return object.name || '未命名模型'
 }
 
 // 引擎核心功能管理
@@ -376,22 +397,10 @@ export function useEngine(options = {}) {
               category: 'batch_load'
             }
           );
-
-          // // 设置模型位置（在一个圆形区域内随机分布）
-          // const angle = (index / modelFiles.length) * Math.PI * 2;
-          // const radius = 50 + Math.random() * 100; // 50-150 的随机半径
-          // const x = Math.cos(angle) * radius + (Math.random() - 0.5) * 20;
-          // const z = Math.sin(angle) * radius + (Math.random() - 0.5) * 20;
-          // const y = Math.random() * 10; // 0-10 的随机高度
-
-          // model.position.set(x, y, z);
-          
-          // // 随机旋转
-          // model.rotation.y = Math.random() * Math.PI * 2;
           
           // 提取文件名并设置模型名称
           const fileName = extractFileNameFromPath(modelPath);
-          const modelName = `${index + 1}_${fileName}`;
+          const modelName = fileName;
           
           // 只设置模型根对象名称
           setModelName(model, modelName);
@@ -435,52 +444,7 @@ export function useEngine(options = {}) {
     }
   };
 
-  // // 加载马模型并设置路径动画
-  // const loadHorseWithAnimation = async (addDebugLog) => {
-  //   if (!engineInstance || !engineReady.value) {
-  //     addDebugLog("error", "❌ 引擎未就绪，无法加载马模型");
-  //     return null;
-  //   }
 
-  //   try {
-  //     addDebugLog("info", "🐎 开始加载马模型...");
-  //     const resourcePlugin = engineInstance.getPlugin("ResourceReaderPlugin");
-
-  //     // const horseModel = await resourcePlugin.loadModelAsync(
-  //     //   "/static/model/Horse.glb",
-  //     //   EngineKernel.TaskPriority.HIGH,
-  //     //   {
-  //     //     timeout: 30000,
-  //     //     retryCount: 2,
-  //     //     category: 'character'
-  //     //   }
-  //     // );
-
-  //     // // 设置马模型的初始位置
-  //     // horseModel.position.set(0, 0, 0);
-  //     // horseModel.scale.set(0.1, 0.1, 0.1);
-      
-  //     // // 设置模型名称（包括子对象）
-  //     // const fileName = extractFileNameFromPath("/static/model/Horse.glb");
-  //     // setModelNamesRecursively(horseModel, "AnimatedHorse", fileName);
-      
-  //     // // 调整模型材质
-  //     // horseModel.traverse((child) => {
-  //     //   if (child.material) {
-  //     //     child.material.needsUpdate = true;
-  //     //   }
-  //     // });
-
-  //     // baseScenePlugin.scene.add(horseModel);
-  //     // addDebugLog("success", "✅ 马模型加载完成，准备设置动画");
-
-  //     // return horseModel;
-
-  //   } catch (error) {
-  //     addDebugLog("error", `❌ 马模型加载失败: ${error.message}`);
-  //     return null;
-  //   }
-  // };
 
   // 设置调试模式（占位符函数）
   const setDebugMode = (enabled) => {
@@ -506,5 +470,9 @@ export function useEngine(options = {}) {
     getEngineInstance,
     getModelMarkerPlugin,
     setDebugMode,
+    
+    // 工具函数
+    setModelName,
+    getModelName,
   };
 }

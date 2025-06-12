@@ -1,10 +1,10 @@
 {
   "totalCount": 4,
   "files": [
-    "model\\main_building.gltf",
-    "model\\SM_JZ_1FBF_01.gltf",
-    "model\\SM_JZ_2FBF_01.gltf",
-    "model\\SM_JZ_3FBF_01.gltf"
+    "model\\MAIN_BUILDING.gltf",
+    "model\\MAIN_BUILDING_1F_厨具.gltf",
+    "model\\MAIN_BUILDING_2F_床柜.gltf",
+    "model\\MAIN_BUILDING_3F_桌椅.gltf"
   ],
-  "scanTime": "2025-06-11T07:19:50.247Z"
+  "scanTime": "2025-06-12T02:35:17.119Z"
 }

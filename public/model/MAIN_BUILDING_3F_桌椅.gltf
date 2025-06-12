@@ -19,7 +19,7 @@
         6.095999,
         32.0132675
       ],
-      "name": "Line159"
+      "name": "MAIN_BUILDING_3F_桌椅"
     }
   ],
   "meshes": [
@@ -62,7 +62,7 @@
           "material": 3
         }
       ],
-      "name": "Line159"
+      "name": "MAIN_BUILDING_3F_桌椅"
     }
   ],
   "accessors": [
@@ -255,7 +255,7 @@
   ],
   "buffers": [
     {
-      "uri": "SM_JZ_3FBF_01.bin",
+      "uri": "MAIN_BUILDING_3F_桌椅.bin",
       "byteLength": 1036416
     }
   ],

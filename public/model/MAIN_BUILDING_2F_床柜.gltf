@@ -19,7 +19,7 @@
         3.10000038,
         31.9189816
       ],
-      "name": "Rectangle332"
+      "name": "MAIN_BUILDING_2F_床柜"
     }
   ],
   "meshes": [
@@ -44,7 +44,7 @@
           "material": 1
         }
       ],
-      "name": "Rectangle332"
+      "name": "MAIN_BUILDING_2F_床柜"
     }
   ],
   "accessors": [
@@ -153,7 +153,7 @@
   ],
   "buffers": [
     {
-      "uri": "SM_JZ_2FBF_01.bin",
+      "uri": "MAIN_BUILDING_2F_床柜.bin",
       "byteLength": 761376
     }
   ],
