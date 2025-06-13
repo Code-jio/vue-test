@@ -567,12 +567,9 @@ const initializeFloorControl = async () => {
     if (buildingControlPlugin) {
       console.log('🏗️ 楼层控制插件已注册，开始自动场景检索...');
       
-      // 🆕 使用新的自动场景检索功能
-      // 传入场景对象，插件会自动发现建筑并关联设备
-      const scene = baseScenePlugin.scene;
-      if (scene) {
+      if (baseScenePlugin) {
         // 重新初始化插件，传入场景对象进行自动配置
-        await buildingControlPlugin.init(scene);
+        await buildingControlPlugin.init(baseScenePlugin);
       } else {
         console.warn('⚠️ 场景对象不可用，无法执行自动检索');
       }
@@ -726,84 +723,6 @@ window.showAllFloors = async () => {
 
   await buildingControlPlugin.showAllFloors();
   updateFloorControlStatus();
-};
-
-// 🆕 重新关联设备（新增功能）
-window.reAssociateEquipment = () => {
-  if (!ensureBuildingModel()) return;
-
-  const baseScenePlugin = getBaseScenePlugin();
-  if (baseScenePlugin && baseScenePlugin.scene) {
-    buildingControlPlugin.reAssociateEquipmentByNaming(baseScenePlugin.scene);
-    console.log('🔄 设备重新关联完成');
-
-    // 显示关联结果
-    const equipmentAssociations = buildingControlPlugin.getEquipmentAssociations();
-    console.log('🔧 最新设备关联信息:', equipmentAssociations);
-  } else {
-    console.warn('⚠️ 场景对象不可用');
-  }
-};
-
-// 🆕 显示场景设备信息（调试功能）
-window.showSceneEquipmentInfo = () => {
-  if (!ensureBuildingModel()) return;
-
-  const baseScenePlugin = getBaseScenePlugin();
-  if (baseScenePlugin && baseScenePlugin.scene) {
-    const equipmentInfo = buildingControlPlugin.getSceneEquipmentInfo(baseScenePlugin.scene);
-
-    console.log('🔍 场景设备信息总览:');
-    console.log(`📊 共发现 ${equipmentInfo.length} 个符合命名规则的设备`);
-
-    equipmentInfo.forEach((info, index) => {
-      console.log(`🔧 设备 ${index + 1}:`, {
-        模型名称: info.modelName,
-        建筑: info.nameInfo.buildingName,
-        楼层: `${info.nameInfo.floorNumber}F`,
-        房间: info.nameInfo.roomNumber || '无',
-        设备名: info.nameInfo.deviceName,
-        对象类型: info.object.type
-      });
-    });
-
-    // 显示设备关联状态
-    const associations = buildingControlPlugin.getEquipmentAssociations();
-    console.log('🏗️ 楼层设备关联状态:', associations);
-  } else {
-    console.warn('⚠️ 场景对象不可用');
-  }
-};
-
-// 🆕 分析场景对象（调试功能）
-window.analyzeScene = () => {
-  const baseScenePlugin = getBaseScenePlugin();
-
-  return buildingControlPlugin.analyzeSceneObjects(baseScenePlugin.scene);
-};
-
-// 🆕 确保建筑模型（调试功能）
-window.ensureBuilding = () => {
-  const baseScenePlugin = getBaseScenePlugin();
-  
-  const success = buildingControlPlugin.ensureBuildingModel(baseScenePlugin.scene);
-  if (success) {
-    floorControlVisible.value = true;
-    updateFloorControlUI();
-  }
-  return success;
-};
-
-// 🆕 手动查找并设置建筑模型（调用插件方法）
-window.findAndSetBuilding = () => {
-  const baseScenePlugin = getBaseScenePlugin();
-
-  const success = buildingControlPlugin.findAndSetBuildingModel(baseScenePlugin.scene);
-  if (success) {
-    floorControlVisible.value = true;
-    updateFloorControlUI();
-  }
-  return success;
 };
 
 // 显示/隐藏建筑外立面

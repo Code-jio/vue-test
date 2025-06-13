@@ -42,8 +42,6 @@ function setModelName(object, baseName) {
   
   // 同时保留object.name用于显示和调试
   object.name = baseName
-  
-  console.log(`🏷️ 模型名称设置完成: ${baseName} (存储在userData.modelName中)`)
 }
 
 /**
