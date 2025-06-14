@@ -18,7 +18,7 @@
 <script setup>
 console.time("场景初始化");
 
-import { ref, onMounted, onUnmounted, createApp } from "vue";
+import { ref, onMounted, onUnmounted, createApp, nextTick } from "vue";
 import { useEngine } from "@/composables/useEngine";
 import eventBus from "@/eventBus";
 import ModelMessage from "@/components/modelMessage.vue";
@@ -55,18 +55,7 @@ const currentModelInfo = ref({});
 
 // 处理模型信息面板关闭
 const handleModelMessageClose = () => {
-  if (css3dInfoInstance && css3dPlugin) {
-    try {
-      if (typeof css3dPlugin.removeObject === "function") {
-        css3dPlugin.removeObject(css3dInfoInstance);
-      } else if (typeof css3dPlugin.remove3DObject === "function") {
-        css3dPlugin.remove3DObject(css3dInfoInstance);
-      }
-      css3dInfoInstance = null;
-    } catch (e) {
-      // 静默处理错误
-    }
-  }
+  hideCSS3DObject();
 };
 
 // 处理模型信息面板聚焦
@@ -183,18 +172,10 @@ const setupPickEventListeners = () => {
         name !== 'skybox' && name !== 'ground'
       ) {
         showModelInfo(pickedObject);
-      } else {
-        // 如果不是模型，或是天空盒/地板，移除信息面板
-        if (css3dInfoInstance && css3dPlugin) {
-          if (typeof css3dPlugin.removeObject === "function") {
-            css3dPlugin.removeObject(css3dInfoInstance);
-          } else if (typeof css3dPlugin.remove3DObject === "function") {
-            css3dPlugin.remove3DObject(css3dInfoInstance);
-          }
-          css3dInfoInstance = null;
-        }
       }
     }
+    console.log("🎯 拾取对象", data)
+    updateCSS3DPosition(data);
   };
 
   // 统一使用 eventBus 注册事件监听器
@@ -206,31 +187,71 @@ const setupPickEventListeners = () => {
   ];
 };
 
+// 创建初始CSS3D对象
+const createInitialCSS3DObject = async () => {
+  try {
+    // 等待DOM更新完成
+    await nextTick();
+    
+    if (!css3dPlugin || !modelMessageRef.value) {
+      console.warn("CSS3D插件或模型信息组件未就绪");
+      return;
+    }
+
+    const componentElement = modelMessageRef.value.$el;
+    
+    // 创建默认隐藏的CSS3D对象
+    css3dInfoInstance = css3dPlugin.createCSS3DObject({
+      element: componentElement,
+      // position: [0, 50, 0], // 默认位置
+      offset: 50,
+      display: false, // 默认隐藏
+      interactive: true,
+      scale: 0.05
+    });
+
+    console.log("✅ 初始CSS3D对象创建成功",css3dInfoInstance);
+  } catch (error) {
+    console.error("❌ 创建初始CSS3D对象失败:", error);
+  }
+};
+
+// 显示CSS3D对象
+const showCSS3DObject = () => {
+  if (css3dInfoInstance && css3dPlugin) {
+    try {
+      // css3dPlugin.fadeOut(css3dInfoInstance);
+      // css3dInfoInstance.visible = true;
+      css3dPlugin.setVisible(css3dInfoInstance, true);
+      console.log("显示CSS3D对象",css3dInfoInstance)
+    } catch (error) {
+      console.error("显示CSS3D对象失败:", error);
+    }
+  }
+};
+
+// 隐藏CSS3D对象
+const hideCSS3DObject = () => {
+  if (css3dInfoInstance && css3dPlugin) {
+    try {
+      // css3dPlugin.fadeIn(css3dInfoInstance);
+      // css3dInfoInstance.visible = false;
+      css3dPlugin.setVisible(css3dInfoInstance, false);
+      console.log("隐藏CSS3D对象",css3dInfoInstance)
+    } catch (error) {
+      console.error("隐藏CSS3D对象失败:", error);
+    }
+  }
+};
+
 // 显示模型信息
 const showModelInfo = (pickedObject) => {
   try {
     // 保存当前选中的对象
     currentPickedObject = pickedObject;
 
-    // 清理之前的信息面板（只保留一个）
-    if (css3dInfoInstance) {
-      try {
-        if (typeof css3dPlugin.removeObject === "function") {
-          css3dPlugin.removeObject(css3dInfoInstance);
-        } else if (typeof css3dPlugin.remove3DObject === "function") {
-          css3dPlugin.remove3DObject(css3dInfoInstance);
-        }
-      } catch (e) {
-        // 静默处理错误
-      }
-      css3dInfoInstance = null;
-    }
-
     // 获取模型信息并更新组件数据
     currentModelInfo.value = extractModelInfo(pickedObject);
-
-    // 确保组件已挂载，获取 DOM 元素
-    const componentElement = modelMessageRef.value.$el;
 
     // 计算3D位置
     const worldPosition = new EngineKernel.THREE.Vector3();
@@ -241,19 +262,8 @@ const showModelInfo = (pickedObject) => {
       worldPosition.z
     ];
 
-    // 创建 CSS3D 对象
-    css3dInfoInstance = css3dPlugin.createCSS3DObject({
-      element: componentElement,
-      position: finalPosition,
-      visible: true,
-      interactive: true,
-      scale: 0.05
-    });
 
-   
-
-    // // 聚焦到 CSS3D 对象位置
-    // focusOnCSS3DObject(finalPosition);
+    showCSS3DObject();
 
   } catch (error) {
     console.error("CSS3D显示错误详情:", error);
@@ -530,6 +540,12 @@ const ensureBuildingModel = () => {
   return success;
 };
 
+const updateCSS3DPosition = (pickedObject) => {
+  if (css3dInfoInstance && css3dPlugin) {
+    css3dInfoInstance.position.set(pickedObject.mousePosition.x, pickedObject.mousePosition.y, pickedObject.mousePosition.z);
+  }
+}
+
 // 楼层展开
 window.expandFloors = async () => {
   if (!ensureBuildingModel()) return;
@@ -617,6 +633,10 @@ const initializeApplication = async () => {
     await initializeMousePick();
     
     await initializeCSS3D();
+    
+    // 在CSS3D插件初始化后创建初始对象
+    await createInitialCSS3DObject();
+    
     await initializeFloorControl();
   } catch (error) {
     console.error("应用初始化失败:", error);
@@ -666,7 +686,12 @@ onUnmounted(() => {
 
   // 清理CSS3D信息面板
   if (css3dInfoInstance && css3dPlugin) {
-    css3dPlugin.remove3DObject(css3dInfoInstance);
+      if (typeof css3dPlugin.removeObject === "function") {
+        css3dPlugin.removeObject(css3dInfoInstance);
+      } else if (typeof css3dPlugin.remove3DObject === "function") {
+        css3dPlugin.remove3DObject(css3dInfoInstance);
+      }
+      css3dInfoInstance = null;
   }
 
   // 清理楼层控件

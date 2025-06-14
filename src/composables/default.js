@@ -8,6 +8,7 @@ let skyBoxPlugin = null;
 let resourceReaderPlugin = null;
 let mousePickPlugin = null;
 let buildingControlPlugin = null;
+let css3dPlugin = null;
 
 const useEngine = () => {
     try {
@@ -149,7 +150,7 @@ const engineInitialize = async () => {
     resourceReaderPlugin = engine.getPlugin("ResourceReaderPlugin");
     mousePickPlugin = engine.getPlugin("MousePickPlugin");
     buildingControlPlugin = engine.getPlugin("BuildingControlPlugin");
-
+    css3dPlugin = engine.getPlugin("CSS3DRenderPlugin");
 }
 
 // 批量加载模型
@@ -186,7 +187,7 @@ const loadBatchModels = async (modelFiles) => {
         if (isBuildingModel) {
             buildingControlPlugin.setBuildingModel(model);
         }
-        
+
 
         return model;
     });
@@ -205,10 +206,191 @@ const loadBatchModels = async (modelFiles) => {
     return loadedModels;
 }
 
+/**
+ * 模型路径动画功能使用示例
+ * 
+ * 基本用法：
+ * ```javascript
+ * import { createModelPathAnimation } from './composables/default.js';
+ * 
+ * // 定义路径点
+ * const pathPoints = [
+ *     { x: 0, y: 0, z: 0 },
+ *     { x: 10, y: 5, z: 0 },
+ *     { x: 20, y: 0, z: 10 },
+ *     { x: 30, y: 10, z: 5 }
+ * ];
+ * 
+ * // 创建动画 - 模型会立即开始移动并循环
+ * const model = await createModelPathAnimation(
+ *     '/models/car.glb',
+ *     pathPoints,
+ *     {
+ *         duration: 8000,
+ *         showTrail: true,
+ *         trailColor: 0xff0000
+ *     }
+ * );
+ * ```
+ * 
+ * 配置选项：
+ * - duration: 动画持续时间(毫秒)，默认5000
+ * - showTrail: 是否显示轨迹线，默认true
+ * - trailColor: 轨迹线颜色，默认0x00ff00(绿色)
+ * - trailWidth: 轨迹线宽度，默认2
+ */
+
+// 模型路径动画功能 - 简化版本，直接开始移动并重复
+const createModelPathAnimation = async (modelUrl, pathPoints, options = {}) => {
+    const resourceReaderPlugin = engine.getPlugin("ResourceReaderPlugin");
+    if (!resourceReaderPlugin) {
+        console.error("ResourceReaderPlugin not found");
+        return null;
+    }
+
+    // 默认配置
+    const config = {
+        duration: 5000,          // 动画持续时间(毫秒)
+        showTrail: true,         // 是否显示轨迹
+        trailColor: 0x00ff00,    // 轨迹颜色
+        trailWidth: 2,           // 轨迹宽度
+        ...options
+    };
+
+    try {
+        // 1. 使用resourceReaderPlugin加载模型
+        console.log(`🚀 开始加载模型: ${modelUrl}`);
+        const model = await resourceReaderPlugin.loadModelAsync(
+            modelUrl,
+            EngineKernel.TaskPriority.HIGH,
+            {
+                timeout: 30000,
+                retryCount: 2,
+                category: 'path_animation'
+            }
+        );
+
+        // 2. 添加模型到场景
+        baseScene.scene.add(model);
+
+        // 设置初始位置
+        if (pathPoints.length > 0) {
+            model.position.set(pathPoints[0].x, pathPoints[0].y, pathPoints[0].z);
+        }
+
+        // 3. 使用Three.js原生方法创建轨迹线
+        if (config.showTrail && pathPoints.length > 1) {
+            const trailGeometry = new EngineKernel.THREE.BufferGeometry();
+            const trailPoints = pathPoints.map(point =>
+                new EngineKernel.THREE.Vector3(point.x, point.y, point.z)
+            );
+            trailGeometry.setFromPoints(trailPoints);
+
+            const trailMaterial = new EngineKernel.THREE.LineBasicMaterial({
+                color: config.trailColor,
+                linewidth: config.trailWidth
+            });
+
+            const trailLine = new EngineKernel.THREE.Line(trailGeometry, trailMaterial);
+            baseScene.scene.add(trailLine);
+        }
+
+        // 4. 路径插值计算函数
+        const interpolatePosition = (t) => {
+            if (pathPoints.length === 0) return new EngineKernel.THREE.Vector3();
+            if (pathPoints.length === 1) return new EngineKernel.THREE.Vector3(pathPoints[0].x, pathPoints[0].y, pathPoints[0].z);
+
+            // 计算当前应该在哪两个点之间
+            const scaledT = t * (pathPoints.length - 1);
+            const index = Math.floor(scaledT);
+            const localT = scaledT - index;
+
+            // 边界处理
+            if (index >= pathPoints.length - 1) {
+                const lastPoint = pathPoints[pathPoints.length - 1];
+                return new EngineKernel.THREE.Vector3(lastPoint.x, lastPoint.y, lastPoint.z);
+            }
+
+            // 线性插值
+            const point1 = pathPoints[index];
+            const point2 = pathPoints[index + 1];
+
+            return new EngineKernel.THREE.Vector3(
+                point1.x + (point2.x - point1.x) * localT,
+                point1.y + (point2.y - point1.y) * localT,
+                point1.z + (point2.z - point1.z) * localT
+            );
+        };
+
+        // 5. 创建循环动画函数
+        const startAnimation = () => {
+            if (pathPoints.length < 2) return;
+
+            const pathProgress = { t: 0 };
+
+            new TWEEN.Tween(pathProgress)
+                .to({ t: 1 }, config.duration)
+                .easing(TWEEN.Easing.Cubic.InOut)
+                .onUpdate(() => {
+                    const position = interpolatePosition(pathProgress.t);
+                    model.position.copy(position);
+                })
+                .onComplete(() => {
+                    // 动画完成后立即重新开始，实现循环
+                    startAnimation();
+                })
+                .start();
+        };
+
+        // 6. 立即开始动画
+        startAnimation();
+
+        console.log(`✅ 模型路径动画创建成功并开始移动: ${modelUrl}`);
+        return model; // 返回模型对象
+
+    } catch (error) {
+        console.error(`❌ 加载模型失败: ${modelUrl}`, error);
+        return null;
+    }
+};
+
+// 创建一个CSS3D对象，默认隐藏，点击可交互建筑后显示
+// 传入参数是一个vue组件，
+// 组件的props是modelInfo
+// 返回一个css3dObject
+
+const createCSS3D = async (vueComponent, modelInfo, position = { x: 0, y: 0, z: 0 }) => {
+    if (!css3dPlugin) {
+        console.error("CSS3DRenderPlugin not found");
+        return null;
+    }
+
+    try {
+        // 创建CSS3D对象配置
+        const css3dConfig = {
+            element:vueComponent,
+            position,
+            display:true
+        };
+
+        // 使用CSS3D插件创建对象
+        const css3dObject = await css3dPlugin.createCSS3DObject(css3dConfig);
+        
+        console.log(`✅ CSS3D对象创建成功:`, css3dObject);
+        return css3dObject;
+
+    } catch (error) {
+        console.error(`❌ 创建CSS3D对象失败:`, error);
+        return null;
+    }
+};
+
 export {
     useEngine,
     engineInitialize,
     loadBatchModels,
+    createModelPathAnimation,
+    createCSS3D,
 
 
     baseScene,
@@ -216,4 +398,5 @@ export {
     resourceReaderPlugin,
     mousePickPlugin,
     buildingControlPlugin,
+    css3dPlugin,
 }
