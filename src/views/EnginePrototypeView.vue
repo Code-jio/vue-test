@@ -6,6 +6,13 @@
     <!-- CSS3D信息面板容器（初始隐藏）-->
     <div id="css3d-container" class="css3d-container"></div>
   </div>
+  <ModelMessage 
+    ref="modelMessageRef"
+    :modelInfo="currentModelInfo"
+    @close="handleModelMessageClose"
+    @focus="handleModelMessageFocus"
+    @highlight="handleModelMessageHighlight"
+  ></ModelMessage>
 </template>
 
 <script setup>
@@ -32,6 +39,7 @@ const {
 const loadedModels = ref([]);
 const currentBuildingModel = ref(null);
 const floorControlVisible = ref(false);
+const modelMessageRef = ref(null);
 
 // 插件引用
 let mousePickPlugin = null;
@@ -44,6 +52,42 @@ let animationId = null;
 
 // 清理函数存储
 let pickEventCleanup = [];
+
+// 当前模型信息
+const currentModelInfo = ref({});
+
+// 处理模型信息面板关闭
+const handleModelMessageClose = () => {
+  if (css3dInfoInstance && css3dPlugin) {
+    try {
+      if (typeof css3dPlugin.removeObject === "function") {
+        css3dPlugin.removeObject(css3dInfoInstance);
+      } else if (typeof css3dPlugin.remove3DObject === "function") {
+        css3dPlugin.remove3DObject(css3dInfoInstance);
+      }
+      css3dInfoInstance = null;
+    } catch (e) {
+      // 静默处理错误
+    }
+  }
+};
+
+// 处理模型信息面板聚焦
+const handleModelMessageFocus = () => {
+  if (currentPickedObject) {
+    focusOnModel(currentPickedObject);
+  }
+};
+
+// 处理模型信息面板高亮
+const handleModelMessageHighlight = () => {
+  if (currentPickedObject) {
+    highlightModel(currentPickedObject);
+  }
+};
+
+// 当前选中的对象
+let currentPickedObject = null;
 
 // 初始化鼠标拾取插件
 const initializeMousePick = async () => {
@@ -82,6 +126,7 @@ const initializeMousePick = async () => {
         includeInvisible: false,
         recursive: true,
         enableDebug: false,
+        showHighlight: true,
       });
 
       // 设置事件监听器
@@ -96,7 +141,6 @@ const initializeMousePick = async () => {
 
 // 初始化CSS3D插件
 const initializeCSS3D = async () => {
-  try {
     const engineInstance = getEngineInstance();
     const baseScenePlugin = getBaseScenePlugin();
 
@@ -126,77 +170,53 @@ const initializeCSS3D = async () => {
     // 获取CSS3D插件
     css3dPlugin = engineInstance.getPlugin("CSS3DRenderPlugin");
 
-    if (css3dPlugin) {
-      // 检查可用方法
-      const methods = [
-        "createCSS3DObject",
-        "addObject",
-        "removeObject",
-        "render",
-      ];
-
-      // 启动CSS3D渲染循环
-      if (typeof css3dPlugin.startRenderLoop === "function") {
-        css3dPlugin.startRenderLoop();
-      }
-
-      // 确保CSS3D能正常渲染
-      if (typeof css3dPlugin.render === "function") {
-        // 手动触发一次渲染测试
-        css3dPlugin.render(baseScenePlugin.camera);
-      }
-    } else {
-      throw new Error("CSS3D插件获取失败");
-    }
-  } catch (error) {
-    console.error("CSS3D初始化错误详情:", error);
-    throw error;
-  }
 };
 
 // 设置拾取事件监听器
 const setupPickEventListeners = () => {
-  if (!mousePickPlugin) return;
-
   // 物体被拾取事件
   const handleObjectPicked = (data) => {
-    const { results, selectedObjectId, selectedObjectName, pickMode } = data;
+    const { results } = data;
+    console.log(results, "results");
     if (results && results.length > 0) {
       const pickedObject = results[0].object;
-      showModelInfo(pickedObject);
+      // 只允许 Mesh 或 SkinnedMesh 类型，且排除 name 为 skybox/ground 的对象
+      const name = pickedObject?.name?.toLowerCase?.() || '';
+      if (
+        (pickedObject && (pickedObject.type === 'Mesh' || pickedObject.type === 'SkinnedMesh')) &&
+        name !== 'skybox' && name !== 'ground'
+      ) {
+        showModelInfo(pickedObject);
+      } else {
+        // 如果不是模型，或是天空盒/地板，移除信息面板
+        if (css3dInfoInstance && css3dPlugin) {
+          if (typeof css3dPlugin.removeObject === "function") {
+            css3dPlugin.removeObject(css3dInfoInstance);
+          } else if (typeof css3dPlugin.remove3DObject === "function") {
+            css3dPlugin.remove3DObject(css3dInfoInstance);
+          }
+          css3dInfoInstance = null;
+        }
+      }
     }
   };
 
-  // 注册事件监听器
-  eventBus.on("mouse-pick:object-picked", handleObjectPicked);
+  // 统一使用 eventBus 注册事件监听器
+  EngineKernel.eventBus.on("mouse-pick:object-picked", handleObjectPicked);
 
   // 保存清理函数
   pickEventCleanup = [
-    () => eventBus.off("mouse-pick:object-picked", handleObjectPicked),
+    () => EngineKernel.eventBus.off("mouse-pick:object-picked", handleObjectPicked),
   ];
 };
 
 // 显示模型信息
 const showModelInfo = (pickedObject) => {
-  if (!css3dPlugin || !pickedObject) {
-    return;
-  }
-
   try {
+    // 保存当前选中的对象
+    currentPickedObject = pickedObject;
 
-    // 检查是否为建筑模型并应用楼层控件
-    let buildingModel = pickedObject;
-
-    // 向上遍历找到建筑模型根节点
-    while (buildingModel && !buildingModel.userData?.isBuildingModel) {
-      buildingModel = buildingModel.parent;
-    }
-
-    if (buildingModel && buildingModel.userData?.isBuildingModel) {
-      setCurrentBuildingModel(buildingModel);
-    }
-
-    // 清理之前的信息面板
+    // 清理之前的信息面板（只保留一个）
     if (css3dInfoInstance) {
       try {
         if (typeof css3dPlugin.removeObject === "function") {
@@ -205,82 +225,40 @@ const showModelInfo = (pickedObject) => {
           css3dPlugin.remove3DObject(css3dInfoInstance);
         }
       } catch (e) {
+        // 静默处理错误
       }
       css3dInfoInstance = null;
     }
 
-    // 获取模型信息
-    const modelInfo = extractModelInfo(pickedObject);
+    // 获取模型信息并更新组件数据
+    currentModelInfo.value = extractModelInfo(pickedObject);
 
-    // 创建DOM容器
-    const container = document.createElement("div");
-    container.className = "model-info-container";
-    container.style.cssText = `
-      position: relative;
-      pointer-events: auto;
-      z-index: 1;
-      transform-style: preserve-3d;
-      background: transparent;
-    `;
+    // 确保组件已挂载，获取 DOM 元素
+    const componentElement = modelMessageRef.value.$el;
 
-    // 创建Vue应用实例
-    const infoApp = createApp(ModelMessage, {
-      modelInfo: modelInfo,
-      onClose: () => {
-        if (css3dInfoInstance && css3dPlugin) {
-          try {
-            if (typeof css3dPlugin.removeObject === "function") {
-              css3dPlugin.removeObject(css3dInfoInstance);
-            } else if (typeof css3dPlugin.remove3DObject === "function") {
-              css3dPlugin.remove3DObject(css3dInfoInstance);
-            }
-            css3dInfoInstance = null;
-          } catch (e) {
-            // 静默处理错误
-          }
-        }
-      },
-      onFocus: () => {
-        focusOnModel(pickedObject);
-      },
-      onHighlight: () => {
-        highlightModel(pickedObject);
-      },
-    });
-
-    // 挂载Vue组件
-    infoApp.mount(container);
-
-    // 计算3D位置（在模型上方）
+    // 计算3D位置
     const worldPosition = new EngineKernel.THREE.Vector3();
     pickedObject.getWorldPosition(worldPosition);
-
-    // 调整位置，确保在模型上方显示
-    const offsetY = 20; // 向上偏移
     const finalPosition = [
       worldPosition.x,
-      worldPosition.y + offsetY,
-      worldPosition.z,
+      worldPosition.y + 20,
+      worldPosition.z
     ];
 
-    // CSS3D位置设置完成
+    // 创建 CSS3D 对象
+    css3dInfoInstance = css3dPlugin.createCSS3DObject({
+      element: componentElement,
+      position: finalPosition,
+      visible: true,
+      interactive: true,
+      scale: 0.05
+    });
 
-    // 使用CSS3D插件的createCSS3DObject方法
-    if (typeof css3dPlugin.createCSS3DObject === "function") {
+   
 
-      const objectId = css3dPlugin.createCSS3DObject({
-        element: container,
-        position: finalPosition,
-        scale: 1,
-        visible: true,
-        interactive: true,
-      });
-      css3dInfoInstance = objectId;
+    // // 聚焦到 CSS3D 对象位置
+    // focusOnCSS3DObject(finalPosition);
 
-      // 创建CSS3D对象后，立即聚焦到该位置
-      focusOnCSS3DObject(finalPosition);
-
-    }
   } catch (error) {
     console.error("CSS3D显示错误详情:", error);
   }
