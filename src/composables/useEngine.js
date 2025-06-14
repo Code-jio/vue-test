@@ -1,64 +1,5 @@
 import { ref, nextTick } from "vue";
 
-/**
- * 从文件路径中提取文件名（不包含扩展名）
- */
-function extractFileNameFromPath(filePath) {
-  if (!filePath) {
-    return `model_${Date.now()}`
-  }
-
-  try {
-    // 处理各种路径格式
-    const cleanPath = filePath.replace(/\\/g, '/')
-    const pathParts = cleanPath.split('/')
-    const fullFileName = pathParts[pathParts.length - 1]
-    
-    // 移除文件扩展名
-    const dotIndex = fullFileName.lastIndexOf('.')
-    const fileNameWithoutExt = dotIndex > 0 ? fullFileName.substring(0, dotIndex) : fullFileName
-    
-    // 清理文件名，移除特殊字符
-    const cleanFileName = fileNameWithoutExt.replace(/[^a-zA-Z0-9\u4e00-\u9fa5_-]/g, '_')
-    
-    return cleanFileName || `model_${Date.now()}`
-  } catch (error) {
-    console.warn('文件名提取失败，使用默认名称:', error)
-    return `model_${Date.now()}`
-  }
-}
-
-/**
- * 设置模型根对象的名称
- */
-function setModelName(object, baseName) {
-  if (!object) return
-  
-  // 将名称存储到userData中（新的命名规则）
-  if (!object.userData) {
-    object.userData = {}
-  }
-  object.userData.modelName = baseName
-  
-  // 同时保留object.name用于显示和调试
-  object.name = baseName
-}
-
-/**
- * 获取模型名称（优先从userData.modelName读取）
- */
-function getModelName(object) {
-  if (!object) return '未命名模型'
-  
-  // 优先使用userData.modelName
-  if (object.userData && object.userData.modelName) {
-    return object.userData.modelName
-  }
-  
-  // 向后兼容：如果userData.modelName不存在，使用object.name
-  return object.name || '未命名模型'
-}
-
 // 引擎核心功能管理
 export function useEngine(options = {}) {
   // 响应式状态
@@ -176,7 +117,6 @@ export function useEngine(options = {}) {
           skyBoxType: EngineKernel.SkyBoxType.HDR_ENVIRONMENT,
           // hdrMapPath: './skybox/SPACE018SN.hdr',
           hdrMapPath: './skybox/rustig_koppie_puresky_2k.hdr',
-          hdrIntensity: 1.0,
         },
       });
     } else {
@@ -298,11 +238,6 @@ export function useEngine(options = {}) {
     }
   };
 
-  // 切换天空盒
-  const toggleSkybox = () => {
-    console.log("天空盒切换功能待实现");
-  };
-
   // 显示缓存状态
   const showCacheStatus = () => {
     if (!engineInstance) return;
@@ -397,11 +332,11 @@ export function useEngine(options = {}) {
           );
           
           // 提取文件名并设置模型名称
-          const fileName = extractFileNameFromPath(modelPath);
+          const fileName = resourcePlugin.extractFileNameFromPath(modelPath);
           const modelName = fileName;
           
           // 只设置模型根对象名称
-          setModelName(model, modelName);
+          resourcePlugin.setModelName(model, modelName);
           
           // 添加到场景
           baseScenePlugin.scene.add(model);
@@ -460,7 +395,6 @@ export function useEngine(options = {}) {
     loadBatchModels,
     // loadHorseWithAnimation,
     resetCamera,
-    toggleSkybox,
     showCacheStatus,
     clearResourceCache,
     getOrbitControlPlugin,
@@ -469,8 +403,19 @@ export function useEngine(options = {}) {
     getModelMarkerPlugin,
     setDebugMode,
     
-    // 工具函数
-    setModelName,
-    getModelName,
+    // 工具函数 - 通过插件获取
+    setModelName: (object, baseName) => {
+      const resourcePlugin = engineInstance?.getPlugin("ResourceReaderPlugin");
+      if (resourcePlugin) {
+        resourcePlugin.setModelName(object, baseName);
+      }
+    },
+    getModelName: (object) => {
+      const resourcePlugin = engineInstance?.getPlugin("ResourceReaderPlugin");
+      if (resourcePlugin) {
+        return resourcePlugin.getModelName(object);
+      }
+      return '未命名模型';
+    },
   };
 }

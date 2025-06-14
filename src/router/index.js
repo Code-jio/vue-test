@@ -8,13 +8,15 @@ import HDRSkyBasicExampleView from '@/views/HDRSkyBasicExample.vue'
 import ModelLoadTestView from '@/views/ModelLoadTest.vue'
 import AsyncLoadingTestView from '@/views/AsyncLoadingTestView.vue'
 // import CSS3DAdvancedView from '@/views/CSS3DAdvanced.vue'
+import DefaultViews from '@/views/DefaultViews.vue'
+
 
 const router = createRouter({
   history: createWebHistory(),
   routes: [
     {
       path: '/',
-      redirect: '/engine-prototype'
+      redirect: '/default'
     },
     {
       path: '/webgl-test',
@@ -85,6 +87,14 @@ const router = createRouter({
     //     title:"CSS3D高级案例"
     //   }
     // }
+    {
+      path: '/default',
+      name: 'default',
+      component: DefaultViews,
+      meta: {
+        title: '默认场景'
+      }
+    }
   ]
 })
 

@@ -25,11 +25,8 @@ import ModelMessage from "@/components/modelMessage.vue";
 
 // 使用引擎功能
 const {
-  engineReady,
-  initStatus,
   initializeEngine,
   loadBatchModels,
-  resetCamera,
   getEngineInstance,
   getBaseScenePlugin,
   getOrbitControlPlugin,
@@ -177,7 +174,6 @@ const setupPickEventListeners = () => {
   // 物体被拾取事件
   const handleObjectPicked = (data) => {
     const { results } = data;
-    console.log(results, "results");
     if (results && results.length > 0) {
       const pickedObject = results[0].object;
       // 只允许 Mesh 或 SkinnedMesh 类型，且排除 name 为 skybox/ground 的对象
@@ -332,117 +328,6 @@ const focusOnModel = (object) => {
   }
 };
 
-// 聚焦到CSS3D对象位置
-const focusOnCSS3DObject = (position) => {
-  const baseScenePlugin = getBaseScenePlugin();
-  const orbitControlPlugin = getOrbitControlPlugin();
-
-  if (!baseScenePlugin || !position) {
-    return;
-  }
-
-  try {
-    // 目标位置（CSS3D对象的位置）
-    const targetPosition = new EngineKernel.THREE.Vector3(
-      position[0],
-      position[1],
-      position[2]
-    );
-
-    // 计算合适的相机位置（在CSS3D对象前方一定距离）
-    const distance = 30; // 相机到目标的距离
-    const cameraOffset = new EngineKernel.THREE.Vector3(0, 5, distance); // 相机在目标前方偏上一点
-    const finalCameraPosition = targetPosition.clone().add(cameraOffset);
-
-    // 使用引擎内置的 cameraFlyTo 方法
-    if (typeof baseScenePlugin.cameraFlyTo === "function") {
-
-      baseScenePlugin.cameraFlyTo({
-        position: finalCameraPosition, // 相机目标位置
-        lookAt: targetPosition, // 相机朝向目标（CSS3D对象位置）
-        duration: 1500, // 动画时长1.5秒
-        onUpdate: () => {
-          // 动画过程中的回调（可选）
-        },
-        onComplete: () => {
-          // 确保轨道控制器目标正确设置
-          if (orbitControlPlugin && orbitControlPlugin.setTarget) {
-            orbitControlPlugin.setTarget(
-              targetPosition.x,
-              targetPosition.y,
-              targetPosition.z
-            );
-          }
-        },
-      });
-    } else {
-      // 如果引擎方法不可用，使用备用方法
-
-      const camera = baseScenePlugin.camera;
-      const currentPosition = camera.position.clone();
-
-      // 使用平滑过渡动画
-      const startTime = Date.now();
-      const duration = 1500; // 1.5秒过渡时间
-
-      const animateCamera = () => {
-        const elapsed = Date.now() - startTime;
-        const progress = Math.min(elapsed / duration, 1);
-
-        // 使用缓动函数让移动更平滑
-        const easeProgress = 1 - Math.pow(1 - progress, 3); // easeOutCubic
-
-        // 插值计算当前相机位置
-        const currentCameraPos = currentPosition
-          .clone()
-          .lerp(finalCameraPosition, easeProgress);
-
-        // 更新相机位置
-        camera.position.copy(currentCameraPos);
-
-        // 设置轨道控制器目标为CSS3D对象位置
-        if (orbitControlPlugin && orbitControlPlugin.setTarget) {
-          orbitControlPlugin.setTarget(
-            targetPosition.x,
-            targetPosition.y,
-            targetPosition.z
-          );
-        }
-
-        // 让相机看向目标
-        camera.lookAt(targetPosition);
-
-        // 如果动画未完成，继续下一帧
-        if (progress < 1) {
-          requestAnimationFrame(animateCamera);
-        } else {
-          // 最终确保轨道控制器目标正确设置
-          if (orbitControlPlugin && orbitControlPlugin.setTarget) {
-            orbitControlPlugin.setTarget(
-              targetPosition.x,
-              targetPosition.y,
-              targetPosition.z
-            );
-          }
-
-          // 更新轨道控制器状态
-          if (orbitControlPlugin && orbitControlPlugin.update) {
-            orbitControlPlugin.update();
-          }
-        }
-      };
-
-      // 开始动画
-      animateCamera();
-
-
-    }
-  } catch (error) {
-    console.error("聚焦CSS3D对象错误详情:", error);
-  }
-};
-
-
 // 批量加载模型
 const loadModelsFromConfig = async () => {
   try {
@@ -557,28 +442,6 @@ const initializeFloorControl = async () => {
   } catch (error) {
     console.error('❌ 楼层控制插件初始化失败:', error);
     throw error;
-  }
-};
-
-// 设置当前建筑模型（手动设置，通常用于用户点击选择）
-const setCurrentBuildingModel = (model) => {
-  if (!buildingControlPlugin || !model) return;
-
-  // 检查是否为建筑模型
-  if (model.userData && model.userData.isBuildingModel) {
-    const success = buildingControlPlugin.setBuildingModel(model);
-    if (success) {
-      currentBuildingModel.value = model;
-      floorControlVisible.value = true; // 显示楼层控件面板
-      updateFloorControlUI();
-
-      // 如果有场景对象，重新执行设备关联
-      const baseScenePlugin = getBaseScenePlugin();
-      if (baseScenePlugin && baseScenePlugin.scene) {
-        buildingControlPlugin.reAssociateEquipmentByNaming(baseScenePlugin.scene);
-        console.log('🔄 已重新关联设备到新建筑');
-      }
-    }
   }
 };
 
@@ -730,21 +593,6 @@ const initializeApplication = async () => {
     // 1. 初始化引擎核心
     await initializeEngine();
 
-    // 等待引擎就绪
-    const waitForReady = () => {
-      return new Promise((resolve) => {
-        const check = () => {
-          if (engineReady.value) {
-            resolve();
-          } else {
-            setTimeout(check, 100);
-          }
-        };
-        check();
-      });
-    };
-
-    await waitForReady();
     // 确保轨道控制器正常工作
     const orbitControlPlugin = getOrbitControlPlugin();
     if (orbitControlPlugin) {
