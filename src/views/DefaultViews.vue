@@ -18,8 +18,7 @@ import {
     loadBatchModels,
     loadModel,
     createPathDemo,
-    testPathLineRendering,
-
+    
     baseScene,
     engine,
     css3dPlugin,

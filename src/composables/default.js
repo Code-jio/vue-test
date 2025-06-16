@@ -348,7 +348,6 @@ export {
     loadBatchModels,
     loadModel,
     createPathDemo,
-    testPathLineRendering,
 
 
     baseScene,
