@@ -240,18 +240,6 @@ const formatNumber = (num) => {
   font-style: italic;
 }
 
-/* 动画效果 */
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(-20px) scale(0.9);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
 .model-info-card {
   animation: slideIn 0.3s ease-out;
 }

@@ -2,22 +2,23 @@
     <div class="engine-scene-container">
         <div id="css3d-container" class="css3d-container"></div>
         <ModelMessage 
-            v-if="currentModelInfo"
+            v-show="currentModelInfo"
             ref="modelMessageRef"
-            :modelInfo="currentModelInfo"
+            :modelInfo="currentModelInfo || {}"
             @close="hideModelInfo"
         />
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted, onUnmounted } from "vue";
+import { ref, onMounted, onUnmounted, nextTick } from "vue";
 import {
     useEngine,
     engineInitialize,
     loadBatchModels,
-    createCSS3D,
-    // loadModel,
+    loadModel,
+    createPathDemo,
+    testPathLineRendering,
 
     baseScene,
     engine,
@@ -31,6 +32,7 @@ import ModelMessage from "@/components/modelMessage.vue";
 
 const currentModelInfo = ref(null); // 当前显示的模型信息
 const currentCSS3DObject = ref(null); // 当前显示的CSS3D对象
+const modelMessageRef = ref(null); // ModelMessage组件引用
 
 onMounted(async () => {
     await useEngine();
@@ -43,6 +45,13 @@ onMounted(async () => {
 
     // 设置点击事件监听
     setupBuildingClickHandler();
+
+    await testCSS3D();
+
+    await createPathDemo('/MAN.gltf')
+
+    // 方法2：使用测试函数
+    // testPathLineRendering()
 })
 
 // 设置建筑点击处理器
@@ -54,7 +63,7 @@ const setupBuildingClickHandler = () => {
 
     // 监听建筑模型点击事件
     EngineKernel.eventBus.on('mouse-pick:getBuilding', async (event) => {
-        await hideModelInfo();
+        await showModelInfo(event);
     });
 
     // 
@@ -66,14 +75,33 @@ const setupBuildingClickHandler = () => {
 // 隐藏模型信息
 const hideModelInfo = async () => {
     if (currentCSS3DObject.value) {
-        // 隐藏CSS3D对象（带渐出动画）
-        await css3dPlugin.fadeIn(currentCSS3DObject.value);
-        currentCSS3DObject.value = null;
+        // 使用动画隐藏CSS3D对象
+        console.log('👁️ 隐藏CSS3D模型信息卡片...');
+        css3dPlugin.setVisible(currentCSS3DObject.value, false, true); // 第三个参数是useAnimation
+    }
+    console.log('✅ CSS3D模型信息卡片已隐藏');
+};
+
+const showModelInfo = async () => {
+    // 设置模型信息
+    currentModelInfo.value = {
+        name: '测试建筑模型',
+        type: '建筑',
+        position: { x: 0, y: 0, z: 0 },
+        uuid: 'test-uuid-12345',
+    };
+    
+    // 等待Vue组件更新完成
+    await nextTick();
+    
+    if (currentCSS3DObject.value) {
+        // 使用动画显示CSS3D对象
+        css3dPlugin.setVisible(currentCSS3DObject.value, true, true); // 第三个参数是useAnimation
+        console.log('👁️ 显示CSS3D模型信息卡片...');
     }
     
-    currentModelInfo.value = null;
-    console.log('👁️ CSS3D模型信息卡片已隐藏');
-};
+    console.log('👁️ 显示模型信息', currentCSS3DObject.value);
+}
 
 // 组件卸载时清理资源
 onUnmounted(async () => {
@@ -81,40 +109,36 @@ onUnmounted(async () => {
 });
 
 // 测试CSS3D功能（可以在控制台调用）
-const testCSS3D = async () => {
-    const testModelInfo = {
-        name: '测试建筑模型',
-        type: '建筑',
-        position: { x: 0, y: 0, z: 0 },
-        uuid: 'test-uuid-12345',
-        material: 'MeshStandardMaterial',
-        geometry: 'BoxGeometry',
-        triangles: 12,
-        vertices: 24
-    };
+const testCSS3D = async (position = {x: 0, y: 0, z: 0}) => {
+    if (!modelMessageRef.value || !modelMessageRef.value.$el) {
+        throw new Error('ModelMessage组件未准备就绪');
+    }
 
-    const testPosition = { x: 0, y: 5, z: 0 };
-    
-    // 隐藏之前的CSS3D对象
-    if (currentCSS3DObject.value) {
-        await css3dPlugin.fadeIn(currentCSS3DObject.value);
+    let options = {
+        element: modelMessageRef.value.$el,
+        position: [position.x, position.y, position.z],
+        display: true,
+        opacity: 1,
+        offset: 50,
+        scale: 0.05,
+        complete: () => {
+            console.log('✅ CSS3D对象创建完成');
+        },
     }
+
+
+    // 在指定位置创建css3D对象
+    let object3D = css3dPlugin.createCSS3DObject(options)
+    currentCSS3DObject.value = object3D;
     
-    // 创建测试CSS3D对象
-    currentCSS3DObject.value = await createCSS3D(ModelMessage, testModelInfo, testPosition);
-    
-    if (currentCSS3DObject.value) {
-        await css3dPlugin.fadeOut(currentCSS3DObject.value);
-        currentModelInfo.value = testModelInfo;
-        console.log('🧪 测试CSS3D对象已创建并显示');
-    }
+    return object3D
 };
 
-// 将测试函数暴露到全局，方便调试
-if (typeof window !== 'undefined') {
-    window.testCSS3D = testCSS3D;
-    window.hideModelInfo = hideModelInfo;
-}
+// // 将测试函数暴露到全局，方便调试
+// if (typeof window !== 'undefined') {
+//     window.testCSS3D = testCSS3D;
+//     window.hideModelInfo = hideModelInfo;
+// }
 
 const loadModelsFromConfig = async () => {
     const response = await fetch("/model-files.json");
