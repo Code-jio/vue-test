@@ -289,6 +289,16 @@ const loadModel = async (url = '/MAN.gltf', options = {}) => {
     }
 };
 
+// 获取随机点位
+const getRandomPosition = (min = -30, max = 30) => {
+    const random = (a, b) => Math.random() * (b - a) + a;
+    return {
+        x: random(min, max),
+        y: 0,
+        z: random(min, max)
+    };
+}
+
 // 快速创建演示路径动画的辅助函数
 const createPathDemo = async (modelUrl = '/MAN.gltf') => {
     try {
@@ -300,13 +310,10 @@ const createPathDemo = async (modelUrl = '/MAN.gltf') => {
         });
         
         // 定义一个示例路径 - 正方形路径
-        const demoPath = [
-            {x: 0, y: 0, z: 0},      // 起点
-            {x: 10, y: 0, z: 0},     // 向右
-            {x: 10, y: 0, z: 10},    // 向前
-            {x: 0, y: 0, z: 10},     // 向左
-            {x: 0, y: 0, z: 0}       // 回到起点
-        ];
+        const demoPath = [];
+        for (let index = 0; index < 8; index++) {
+            demoPath.push(getRandomPosition())            
+        }
         
         // 启动路径动画
         const pathAnimation = modelController.moveByPath(demoPath, {
@@ -316,10 +323,6 @@ const createPathDemo = async (modelUrl = '/MAN.gltf') => {
             pathLineColor: 0xff0000, // 改为红色，更容易看到
             pathLineWidth: 5, // 增加线宽，测试管道几何体
             easing: 'linear',
-            onStart: () => console.log('🎬 路径演示开始'),
-            onComplete: () => {
-                console.log('🔄 路径演示完成，开始下一轮循环');
-            }
         });
         
         // 将控制器暴露到全局以便调试
