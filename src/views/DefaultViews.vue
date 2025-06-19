@@ -85,9 +85,7 @@ onMounted(async () => {
     await loadModelsFromConfig();
     await buildingControlPlugin.init(baseScene);
 
-    const floorInfo = buildingControlPlugin.getFloorInfo();
-    console.log('📊 楼层控制插件初始化完成，楼层信息:', floorInfo, buildingControlPlugin);
-    console.log('场景:', baseScene);
+    console.log('🏢 建筑模型解析结果:', buildingControlPlugin);
 
     // 设置点击事件监听
     setupBuildingClickHandler();

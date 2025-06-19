@@ -9,6 +9,7 @@ let resourceReaderPlugin = null;
 let mousePickPlugin = null;
 let buildingControlPlugin = null;
 let css3dPlugin = null;
+let floorManager = null;
 
 const useEngine = () => {
     try {
@@ -28,11 +29,20 @@ const engineInitialize = async () => {
                 userData: {
                     floorConfig: {
                         enabled: true,
-                        type: 'static',
-                        staticConfig: {
-                            tiling: [25, 25], // 图片铺满
-                            texture: './textures/floor.png' // 你的图片路径
-                        }
+                        type: 'water',
+                        size: 10000,
+                        position: [0, 0, 0],
+                        waterConfig: {
+                            textureWidth: 512,
+                            textureHeight: 512,
+                            alpha: 1.0,
+                            time: 0,
+                            waterColor: 0x4a90e2,
+                            distortionScale: 2.0,
+                            waterNormalsUrl: "./textures/waternormals.jpg",
+                            animationSpeed: 0.3,
+                            waveScale: 0.5
+                        },
                     },
                     debugConfig: {
                         enabled: true,
@@ -153,6 +163,47 @@ const engineInitialize = async () => {
     css3dPlugin = engine.getPlugin("CSS3DRenderPlugin");
     modelMarkerPlugin = engine.getPlugin("ModelMarkerPlugin");
 
+    // 获取楼层管理器实例
+    floorManager = baseScene.floorManager;
+    
+    // 暴露水面控制方法到全局（方便调试）
+    if (typeof window !== 'undefined') {
+        window.setWaterAnimationSpeed = (speed) => {
+            if (floorManager) {
+                floorManager.setWaterAnimationSpeed(speed);
+                console.log(`水面动画速度设置为: ${speed}`);
+            }
+        };
+        window.setWaterWaveIntensity = (intensity) => {
+            if (floorManager) {
+                floorManager.setWaterWaveIntensity(intensity);
+                console.log(`水面波浪强度设置为: ${intensity}`);
+            }
+        };
+        window.setWaterDistortionScale = (scale) => {
+            if (floorManager) {
+                floorManager.setWaterDistortionScale(scale);
+                console.log(`水面扭曲比例设置为: ${scale}`);
+            }
+        };
+        window.setWaterColor = (color) => {
+            if (floorManager) {
+                floorManager.setWaterColor(color);
+                console.log(`水面颜色设置为: 0x${color.toString(16)}`);
+            }
+        };
+        window.getWaterParams = () => {
+            return floorManager ? floorManager.getWaterParams() : null;
+        };
+        
+        console.log('🌊 简化水面控制方法已暴露到全局:');
+        console.log('- window.setWaterAnimationSpeed(speed) // 0.1-5.0 动画速度');
+        console.log('- window.setWaterWaveIntensity(intensity) // 0.0-3.0 波浪强度');
+        console.log('- window.setWaterDistortionScale(scale) // 0.0-8.0 扭曲程度');
+        console.log('- window.setWaterColor(0xHEXCOLOR) // 水面颜色');
+        console.log('- window.getWaterParams() // 获取当前参数');
+    }
+
     modelMarkerPlugin.init(engine)
 }
 
@@ -230,8 +281,6 @@ const loadModel = async (url = '/MAN.gltf', options = {}) => {
             enableAnimations: options.enableAnimations !== undefined ? options.enableAnimations : true,
             ...options
         };
-
-        console.log(`🚀 开始加载模型: ${url}`);
         
         // 添加模型到ModelMarker
         const modelId = modelMarkerPlugin.addModel(config);
@@ -239,8 +288,6 @@ const loadModel = async (url = '/MAN.gltf', options = {}) => {
         if (!modelId) {
             throw new Error('模型添加失败，未返回有效的模型ID');
         }
-
-        console.log(`📝 模型ID: ${modelId}`);
 
         // 创建增强的模型控制器
         const modelController = {
@@ -266,14 +313,14 @@ const loadModel = async (url = '/MAN.gltf', options = {}) => {
                     pathLineWidth: 2,
                     easing: 'easeInOut',
                     lookAtDirection: true,
-                    onStart: () => console.log(`🎬 模型 ${modelId} 开始路径移动`),
+                    // onStart: () => console.log(`🎬 模型 ${modelId} 开始路径移动`),
                     onUpdate: (progress) => {
                         // if (moveOptions.showProgress !== false) {
                             // console.log(`📍 ${modelId} 移动进度: ${Math.round(progress * 100)}%`);
                         // }
                     },
-                    onComplete: () => console.log(`🏁 模型 ${modelId} 路径移动完成`),
-                    onStop: () => console.log(`⏹️ 模型 ${modelId} 路径移动停止`),
+                    // onComplete: () => console.log(`🏁 模型 ${modelId} 路径移动完成`),
+                    // onStop: () => console.log(`⏹️ 模型 ${modelId} 路径移动停止`),
                     ...moveOptions
                 };
 
@@ -360,4 +407,5 @@ export {
     buildingControlPlugin,
     modelMarkerPlugin,
     css3dPlugin,
+    floorManager,
 }
