@@ -30,7 +30,7 @@ const engineInitialize = async () => {
                     floorConfig: {
                         enabled: true,
                         type: 'water',
-                        size: 10000,
+                        size: Infinity,
                         position: [0, 0, 0],
                         waterConfig: {
                             textureWidth: 512,
