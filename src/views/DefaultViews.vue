@@ -85,7 +85,7 @@ onMounted(async () => {
     await loadModelsFromConfig();
     await buildingControlPlugin.init(baseScene);
 
-    console.log('🏢 建筑模型解析结果:', buildingControlPlugin);
+    console.log('🏢 建筑模型解析结果:', buildingControlPlugin,baseScene);
 
     // 设置点击事件监听
     setupBuildingClickHandler();
