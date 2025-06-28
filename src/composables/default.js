@@ -283,12 +283,15 @@ const loadModel = async (url = '/MAN.gltf', options = {}) => {
         };
         
         // 添加模型到ModelMarker
-        const {modelId,model} = modelMarkerPlugin.addModel(config);
-        console.log('🌐 模型添加结果:', modelId, model);        
+        const modelInstance = await modelMarkerPlugin.addModel(config);
+        console.log('🌐 模型添加结果:', modelInstance.id, modelInstance.model);        
         
-        if (!modelId) {
-            throw new Error('模型添加失败，未返回有效的模型ID');
+        if (!modelInstance || !modelInstance.id) {
+            throw new Error('模型添加失败，未返回有效的模型实例');
         }
+        
+        const modelId = modelInstance.id;
+        modelMarkerPlugin.setModelColor(modelId, [255, 0, 0]);
 
         // 创建增强的模型控制器
         const modelController = {
