@@ -283,7 +283,8 @@ const loadModel = async (url = '/MAN.gltf', options = {}) => {
         };
         
         // 添加模型到ModelMarker
-        const modelId = modelMarkerPlugin.addModel(config);
+        const {modelId,model} = modelMarkerPlugin.addModel(config);
+        console.log('🌐 模型添加结果:', modelId, model);        
         
         if (!modelId) {
             throw new Error('模型添加失败，未返回有效的模型ID');
@@ -313,6 +314,7 @@ const loadModel = async (url = '/MAN.gltf', options = {}) => {
                     pathLineWidth: 2,
                     easing: 'easeInOut',
                     lookAtDirection: true,
+                    cycle: true,
                     // onStart: () => console.log(`🎬 模型 ${modelId} 开始路径移动`),
                     onUpdate: (progress) => {
                         // if (moveOptions.showProgress !== false) {
