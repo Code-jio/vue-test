@@ -60,6 +60,7 @@ import {
     loadBatchModels,
     loadModel,
     createPathDemo,
+    createFireMarker,
 
     baseScene,
     engine,
@@ -89,10 +90,18 @@ onMounted(async () => {
 
     // 设置点击事件监听
     setupBuildingClickHandler();
+    
+    // 创建火焰效果
+    let fire = createFireMarker({
+        position: [10, 30, 10], // 设置在容易看到的位置，提高高度
+        size: 20.0, // 大幅增大尺寸
+        intensity: 1.0,
+        debugMode: true, // 启用调试模式
+    });
+    fire.addToScene(baseScene.scene, baseScene.camera); // 传递相机参数以支持Billboard效果
 
-    // await testCSS3D();
 
-    await createPathDemo('/MAN.gltf')
+    // await createPathDemo('/MAN.gltf')
 
     // 方法2：使用测试函数
     // testPathLineRendering()
