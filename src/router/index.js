@@ -9,6 +9,7 @@ import ModelLoadTestView from '@/views/ModelLoadTest.vue'
 import AsyncLoadingTestView from '@/views/AsyncLoadingTestView.vue'
 // import CSS3DAdvancedView from '@/views/CSS3DAdvanced.vue'
 import DefaultViews from '@/views/DefaultViews.vue'
+import TestGraph from '@/views/testGraph.vue'
 
 
 const router = createRouter({
@@ -93,6 +94,14 @@ const router = createRouter({
       component: DefaultViews,
       meta: {
         title: '默认场景'
+      }
+    },
+    {
+      path: '/graph',
+      name: 'graph',
+      component: TestGraph,
+      meta: {
+        title: '3D关系图'
       }
     }
   ]

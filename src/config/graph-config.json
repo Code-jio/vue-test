@@ -1,0 +1,350 @@
+{
+  "scene": {
+    "background": "0x0d0d0d",
+    "camera": {
+      "position": [0, 0, 20],
+      "fov": 45,
+      "near": 0.1,
+      "far": 1000
+    }
+  },
+  "lighting": {
+    "intensity": 1.5,
+    "ambient": {
+      "color": "0x6a4c93",
+      "intensity": 0.25
+    },
+    "directional": {
+      "color": "0xf8f4ff",
+      "intensity": 0.9,
+      "position": [10, 10, 10],
+      "castShadow": true
+    },
+    "pointLights": [
+      {
+        "id": "purple",
+        "color": "0xba68c8",
+        "intensity": 1.2,
+        "distance": 35,
+        "position": [8, 8, 8],
+        "animation": {
+          "movement": {
+            "x": { "function": "sin", "speed": 0.5, "amplitude": 12 },
+            "z": { "function": "cos", "speed": 0.5, "amplitude": 12 }
+          },
+          "intensity": {
+            "base": 1.0,
+            "function": "sin",
+            "speed": 2,
+            "amplitude": 0.4
+          },
+          "colorVariation": {
+            "base": 0.8,
+            "function": "sin",
+            "speed": 1.2,
+            "amplitude": 0.2
+          }
+        }
+      },
+      {
+        "id": "orange",
+        "color": "0xff8a65",
+        "intensity": 1.2,
+        "distance": 35,
+        "position": [-8, 8, -8],
+        "animation": {
+          "movement": {
+            "x": { "function": "cos", "speed": 0.7, "amplitude": 10 },
+            "y": { "function": "sin", "speed": 0.4, "amplitude": 8, "offset": 5 }
+          },
+          "intensity": {
+            "base": 1.0,
+            "function": "cos",
+            "speed": 1.5,
+            "amplitude": 0.4
+          },
+          "colorVariation": {
+            "base": 0.8,
+            "function": "cos",
+            "speed": 1.8,
+            "amplitude": 0.2
+          }
+        }
+      },
+      {
+        "id": "cyan",
+        "color": "0x4dd0e1",
+        "intensity": 1.2,
+        "distance": 35,
+        "position": [0, -8, 8],
+        "animation": {
+          "movement": {
+            "y": { "function": "sin", "speed": 0.3, "amplitude": 10 },
+            "z": { "function": "cos", "speed": 0.8, "amplitude": 8 }
+          },
+          "intensity": {
+            "base": 1.0,
+            "function": "sin",
+            "speed": 1.8,
+            "amplitude": 0.4
+          },
+          "colorVariation": {
+            "base": 0.8,
+            "function": "sin",
+            "speed": 2.2,
+            "amplitude": 0.2
+          }
+        }
+      }
+    ],
+    "fillLight": {
+      "color": "0x7ec8e3",
+      "intensity": 0.35,
+      "position": [-10, -10, -10]
+    },
+    "topLight": {
+      "color": "0xffb74d",
+      "intensity": 0.25,
+      "position": [0, 20, 0]
+    }
+  },
+  "physics": {
+    "damping": 0.85,
+    "timeStep": 0.01,
+    "centerForce": 0.1,
+    "repulsionStrength": 500,
+    "attractionStrength": 500
+  },
+  "nodes": {
+    "defaultCount": 20,
+    "levels": {
+      "1": {
+        "name": "root",
+        "radius": 1.0,
+        "color": "0x9c27b0",
+        "colorVariation": {
+          "min": 0.9,
+          "max": 1.1
+        },
+        "material": {
+          "emissiveColor": "0x7b1fa2",
+          "emissiveIntensity": 0.4,
+          "roughness": 0.1,
+          "metalness": 0.9,
+          "envMapIntensity": 1.2
+        },
+        "animation": {
+          "emissiveVariation": {
+            "base": 0.4,
+            "function": "sin",
+            "speed": 2,
+            "amplitude": 0.15
+          }
+        },
+        "position": {
+          "type": "center",
+          "coordinates": [0, 0, 0]
+        }
+      },
+      "2": {
+        "name": "main",
+        "radius": 0.6,
+        "color": "0xff6b35",
+        "colorVariation": {
+          "min": 0.85,
+          "max": 1.15
+        },
+        "material": {
+          "emissiveColor": "0xd84315",
+          "emissiveIntensity": 0.15,
+          "roughness": 0.15,
+          "metalness": 0.85,
+          "envMapIntensity": 1.0
+        },
+        "animation": {
+          "emissiveVariation": {
+            "base": 0.15,
+            "function": "sin",
+            "speed": 1.5,
+            "amplitude": 0.08
+          }
+        },
+        "position": {
+          "type": "circular",
+          "radius": 5,
+          "maxCount": 5,
+          "zVariation": 2
+        }
+      },
+      "3": {
+        "name": "sub",
+        "radius": 0.3,
+        "color": "0x00bcd4",
+        "colorVariation": {
+          "min": 0.8,
+          "max": 1.2
+        },
+        "material": {
+          "emissiveColor": "0x006064",
+          "emissiveIntensity": 0.1,
+          "roughness": 0.3,
+          "metalness": 0.6,
+          "envMapIntensity": 0.7
+        },
+        "animation": {
+          "emissiveVariation": {
+            "base": 0.1,
+            "function": "sin",
+            "speed": 1.8,
+            "amplitude": 0.05,
+            "indexOffset": 0.5
+          }
+        },
+        "position": {
+          "type": "aroundParent",
+          "radiusMin": 2,
+          "radiusMax": 3.5,
+          "zVariation": 3
+        }
+      }
+    }
+  },
+  "connections": {
+    "types": {
+      "root-main": {
+        "length": 3,
+        "strength": 0.5,
+        "color": "0xba68c8",
+        "opacity": 0.8,
+        "animation": {
+          "opacityVariation": {
+            "base": 0.6,
+            "function": "sin",
+            "speed": 3,
+            "amplitude": 0.2
+          }
+        }
+      },
+      "main-sub": {
+        "length": 2,
+        "strength": 0.5,
+        "color": "0xff8a65",
+        "opacity": 0.7,
+        "animation": {
+          "opacityVariation": {
+            "base": 0.7,
+            "function": "cos",
+            "speed": 2.5,
+            "amplitude": 0.15
+          }
+        }
+      },
+      "sub-sub": {
+        "length": 2,
+        "strength": 0.5,
+        "color": "0x4dd0e1",
+        "opacity": 0.6,
+        "animation": {
+          "opacityVariation": {
+            "base": 0.6,
+            "function": "sin",
+            "speed": 2,
+            "amplitude": 0.1
+          }
+        }
+      }
+    }
+  },
+  "animation": {
+    "newNodeAnimation": {
+      "duration": 50,
+      "speed": 0.02,
+      "initialScale": 0.1,
+      "easing": "easeOutCubic"
+    },
+    "spawnPosition": {
+      "type": "random",
+      "range": 20
+    }
+  },
+  "cameraControls": {
+    "enableDamping": true,
+    "dampingFactor": 0.05,
+    "autoRotate": true,
+    "autoRotateSpeed": 1.0,
+    "enableZoom": true,
+    "enablePan": true,
+    "minDistance": 5,
+    "maxDistance": 100,
+    "minPolarAngle": 0,
+    "maxPolarAngle": 3.141592653589793
+  },
+  "controls": {
+    "nodeCount": {
+      "min": 5,
+      "max": 50,
+      "default": 20
+    },
+    "repulsionStrength": {
+      "min": 100,
+      "max": 10000,
+      "default": 500
+    },
+    "attractionStrength": {
+      "min": 100,
+      "max": 10000,
+      "default": 500
+    },
+    "lightIntensity": {
+      "min": 0.5,
+      "max": 3,
+      "step": 0.1,
+      "default": 1.5
+    },
+    "autoAddNodes": {
+      "interval": 3000,
+      "maxNodes": 50
+    }
+  },
+  "renderer": {
+    "antialias": true,
+    "shadowMap": {
+      "enabled": true,
+      "type": "PCFSoftShadowMap"
+    }
+  },
+  "labels": {
+    "trainee": {
+      "name": "张三"
+    },
+    "secondLevel": [
+      {
+        "id": "behavior",
+        "name": "行为",
+        "items": [
+          "打开灭火器", "进入2号舱室", "打开排烟机", "下达搜救指令", "关闭排水阀",
+          "检查呼吸器", "佩戴防护服", "连接水带", "检查舱室温度", "关闭电源总闸",
+          "组织队员集合", "进行舱室通风", "检查舱门密封", "记录操作日志", "进行伤员转移",
+          "检查气体浓度", "进行现场警戒", "进行灭火剂补充", "检查通讯设备", "进行现场照明"
+        ]
+      },
+      {
+        "id": "factor",
+        "name": "评分因子",
+        "items": [
+          "准确性", "及时性", "有效性", "全面性", "稳定性", "协同性", "规范性", "安全性",
+          "可靠性", "灵活性", "预见性", "反应速度", "资源利用率", "团队协作", "沟通效率", "决策质量"
+        ]
+      },
+      {
+        "id": "task",
+        "name": "任务",
+        "items": [
+          "炉灶火灭火", "会人员搜救", "迷笼逃脱", "机舱火灾扑救", "伤员搬运", "舱室排烟",
+          "设备断电", "现场警戒", "物资搬运", "现场照明", "通讯联络", "现场指挥",
+          "现场评估", "现场记录", "现场复盘", "现场总结"
+        ]
+      }
+    ]
+  }
+} 
