@@ -121,6 +121,7 @@
       "1": {
         "name": "root",
         "radius": 1.0,
+        "fontSize": 20,
         "color": "0x9c27b0",
         "colorVariation": {
           "min": 0.9,
@@ -149,6 +150,7 @@
       "2": {
         "name": "main",
         "radius": 0.6,
+        "fontSize": 16,
         "color": "0xff6b35",
         "colorVariation": {
           "min": 0.85,
@@ -179,6 +181,7 @@
       "3": {
         "name": "sub",
         "radius": 0.3,
+        "fontSize": 12,
         "color": "0x00bcd4",
         "colorVariation": {
           "min": 0.8,
@@ -304,6 +307,24 @@
     "autoAddNodes": {
       "interval": 3000,
       "maxNodes": 50
+    },
+    "dynamicNodes": {
+      "interval": 3000,
+      "minNodes": 3,
+      "maxNodes": 8,
+      "initialNodes": 4,
+      "enabled": true
+    },
+    "adaptiveSize": {
+      "enabled": true,
+      "radiusRange": {
+        "min": 0.8,
+        "max": 1.6
+      },
+      "textLengthRange": {
+        "min": 2,
+        "max": 16
+      }
     }
   },
   "renderer": {
