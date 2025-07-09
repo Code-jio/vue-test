@@ -7,8 +7,8 @@
 <script setup>
 import { ref, onMounted, onUnmounted, watch, computed } from 'vue'
 import { THREE, OrbitControls, CSS3DRenderer, CSS3DObject } from '../main'
-// import graphConfig from '../config/graph-config-galaxy.json'
-import graphConfig from '../config/graph-config.json'
+// import graphConfig from '../config/graph-config-galaxy.js'  // 银河系主题配置
+import graphConfig from '../config/graph-config.js'             // 默认主题配置
 
 // 配置解析器
 class ConfigParser {
@@ -135,6 +135,10 @@ let lastCameraPosition = new THREE.Vector3()
 let labelUpdateCounter = 0
 const labelUpdateInterval = 2 // 每2帧更新一次标签（优化性能）
 
+// CSS3D标签遮挡和深度管理
+let labelDepthData = [] // 存储标签深度信息
+const occlusionRaycaster = new THREE.Raycaster() // 用于遮挡检测的射线
+
 // 节点类
 class Node {
     constructor(id, x = 0, y = 0, z = 0) {
@@ -142,12 +146,13 @@ class Node {
         this.position = new THREE.Vector3(x, y, z)
         this.velocity = new THREE.Vector3(0, 0, 0) // 速度
         this.force = new THREE.Vector3(0, 0, 0) // 力
-        this.mass = 1 // 质量
+        this.mass = 1 // 基础质量
         this.radius = 0.5 // 半径
         this.color = new THREE.Color().setHSL(Math.random(), 0.7, 0.6) // 颜色
         this.fixed = false // 是否固定
         this.name = '' // 节点名称
         this.nodeType = '' // 节点类型
+        this.level = 1 // 节点层级
 
         // 动画相关属性
         this.targetPosition = null // 目标位置
@@ -157,8 +162,15 @@ class Node {
         this.initialScale = 0 // 初始缩放
 
         // 文字和球体大小相关属性
-        this.fontSize = 12 // 字体大小
+        this.fontSize = 8 // 字体大小
         this.calculatedRadius = 0.5 // 根据文字计算的半径
+
+        // 层级物理属性（会在设置层级时更新）
+        this.effectiveMass = 1 // 实际质量（基础质量 × 层级倍数）
+        this.repulsionMultiplier = 1 // 斥力倍数
+        this.attractionMultiplier = 1 // 引力倍数
+        this.centerForceMultiplier = 1 // 中心力倍数
+        this.influenceMultiplier = 1 // 影响力倍数
     }
 
     // 根据文字长度计算球体大小，根据层级设置文字大小
@@ -169,7 +181,7 @@ class Node {
         if (!adaptiveSizeEnabled.value) {
             this.radius = baseConfig.radius
             this.calculatedRadius = baseConfig.radius
-            this.fontSize = 12
+            this.fontSize = 8
             return {
                 radius: this.radius,
                 fontSize: this.fontSize
@@ -195,7 +207,7 @@ class Node {
         this.calculatedRadius = minRadius + (maxRadius - minRadius) * lengthFactor
 
         // 根据节点层级从配置文件中读取文字大小
-        this.fontSize = baseConfig.fontSize || 12 // 如果配置文件中没有fontSize，使用默认值12
+        this.fontSize = baseConfig.fontSize || 8 // 如果配置文件中没有fontSize，使用默认值8
 
         // 更新节点半径
         this.radius = this.calculatedRadius
@@ -203,6 +215,31 @@ class Node {
         return {
             radius: this.calculatedRadius,
             fontSize: this.fontSize
+        }
+    }
+
+    // 根据层级更新物理属性
+    updateLevelPhysics() {
+        const physicsConfig = graphConfig.physics
+        
+        if (physicsConfig.levelBased && physicsConfig.levelBased.enabled) {
+            const levelConfig = physicsConfig.levelBased.levels[this.level.toString()]
+            
+            if (levelConfig) {
+                // 更新层级相关的物理属性
+                this.effectiveMass = this.mass * levelConfig.mass
+                this.repulsionMultiplier = levelConfig.repulsionMultiplier
+                this.attractionMultiplier = levelConfig.attractionMultiplier
+                this.centerForceMultiplier = levelConfig.centerForceMultiplier
+                this.influenceMultiplier = levelConfig.influence
+            }
+        } else {
+            // 如果未启用层级物理，使用默认值
+            this.effectiveMass = this.mass
+            this.repulsionMultiplier = 1
+            this.attractionMultiplier = 1
+            this.centerForceMultiplier = 1
+            this.influenceMultiplier = 1
         }
     }
 
@@ -215,8 +252,8 @@ class Node {
     update() {
         if (this.fixed) return
 
-        // 应用力到速度
-        this.velocity.add(this.force.clone().multiplyScalar(timeStep / this.mass))
+        // 应用力到速度（使用有效质量）
+        this.velocity.add(this.force.clone().multiplyScalar(timeStep / this.effectiveMass))
 
         // 应用阻尼
         this.velocity.multiplyScalar(damping)
@@ -369,6 +406,9 @@ const generateGraphData = () => {
         Math.random() * (rootConfig.colorVariation.max - rootConfig.colorVariation.min)
     rootNode.color = new THREE.Color(configParser.parseColor(rootConfig.color)).multiplyScalar(colorVariation)
 
+    // 更新层级物理属性
+    rootNode.updateLevelPhysics()
+
     nodes.push(rootNode)
 
     // 创建二级节点（行为、评分因子、任务）
@@ -392,6 +432,9 @@ const generateGraphData = () => {
         const colorVariation = nodeConfig.colorVariation.min +
             Math.random() * (nodeConfig.colorVariation.max - nodeConfig.colorVariation.min)
         node.color = new THREE.Color(configParser.parseColor(nodeConfig.color)).multiplyScalar(colorVariation)
+
+        // 更新层级物理属性
+        node.updateLevelPhysics()
 
         nodes.push(node)
         level2Nodes.push(node)
@@ -478,6 +521,9 @@ const createThirdLevelNode = (id, name, parentNode, index, totalCount) => {
     const colorVariation = nodeConfig.colorVariation.min +
         Math.random() * (nodeConfig.colorVariation.max - nodeConfig.colorVariation.min)
     node.color = new THREE.Color(configParser.parseColor(nodeConfig.color)).multiplyScalar(colorVariation)
+
+    // 更新层级物理属性
+    node.updateLevelPhysics()
 
     return node
 }
@@ -824,13 +870,13 @@ const updateNodeScale = (nodeIndex, scale) => {
 
         // 同步更新文字大小，基于层级的基础大小进行缩放
         if (label.element) {
-            const scaledFontSize = Math.max(6, Math.round(node.fontSize * scale))
-            label.element.style.fontSize = `${scaledFontSize}px`
+                    const scaledFontSize = Math.max(3, Math.round(node.fontSize * scale))
+        label.element.style.fontSize = `${scaledFontSize}px`
 
             // 如果CSS3D标签当前没有其他transform，应用球体缩放
             const currentTransform = label.element.style.transform
             if (!currentTransform.includes('scale(')) {
-                label.element.style.transform = `scale(${scale})`
+                label.element.style.transform = `scale(${scale * 0.001})`
             }
         }
     }
@@ -840,7 +886,7 @@ const updateNodeScale = (nodeIndex, scale) => {
 const showNodeSizeInfo = () => {
     console.log('=== 节点大小信息 ===')
     console.log('自适应大小功能：', adaptiveSizeEnabled.value ? '启用' : '禁用')
-    console.log(`文字大小设置：Level 1(${graphConfig.nodes.levels[1].fontSize || 20}px) > Level 2(${graphConfig.nodes.levels[2].fontSize || 16}px) > Level 3(${graphConfig.nodes.levels[3].fontSize || 12}px)`)
+    console.log(`文字大小设置：Level 1(${graphConfig.nodes.levels[1].fontSize || 10}px) > Level 2(${graphConfig.nodes.levels[2].fontSize || 8}px) > Level 3(${graphConfig.nodes.levels[3].fontSize || 6}px)`)
 
     // 显示配置文件中的自适应大小设置
     const adaptiveConfig = graphConfig.controls.adaptiveSize || {}
@@ -928,9 +974,9 @@ const logDynamicNodeConfig = () => {
 // 显示层级文字大小设置
 const showLevelFontSizes = () => {
     console.log('=== 层级文字大小设置 ===')
-    console.log(`Level 1 (根节点): ${graphConfig.nodes.levels[1].fontSize || 20}px`)
-    console.log(`Level 2 (二级节点): ${graphConfig.nodes.levels[2].fontSize || 16}px`)
-    console.log(`Level 3 (三级节点): ${graphConfig.nodes.levels[3].fontSize || 12}px`)
+    console.log(`Level 1 (根节点): ${graphConfig.nodes.levels[1].fontSize || 10}px`)
+    console.log(`Level 2 (二级节点): ${graphConfig.nodes.levels[2].fontSize || 8}px`)
+    console.log(`Level 3 (三级节点): ${graphConfig.nodes.levels[3].fontSize || 6}px`)
     console.log('自适应大小功能:', adaptiveSizeEnabled.value ? '启用' : '禁用')
 
     // 按层级统计当前节点
@@ -984,6 +1030,323 @@ const adjustCSS3DScaleParams = (nearDistance = 10, farDistance = 50, maxScale = 
     console.log('========================')
 
     // 这里可以添加动态参数调整逻辑
+}
+
+// 显示层级缩放信息
+const showLevelScaleInfo = () => {
+    console.log('=== 层级缩放信息 ===')
+    const css3dConfig = graphConfig.css3d
+    
+    if (css3dConfig.scale.levelBased && css3dConfig.scale.levelBased.enabled) {
+        console.log('层级缩放功能: 启用')
+        console.log('层级缩放配置:')
+        Object.entries(css3dConfig.scale.levelBased.levels).forEach(([level, scale]) => {
+            console.log(`  Level ${level}: ${scale}`)
+        })
+    } else {
+        console.log('层级缩放功能: 禁用')
+        console.log('当前使用固定缩放:', css3dConfig.scale.fixed)
+    }
+    
+    console.log('节点层级分布:')
+    const levelCounts = {}
+    const levelNodes = {}
+    
+    nodes.forEach(node => {
+        if (!levelCounts[node.level]) {
+            levelCounts[node.level] = 0
+            levelNodes[node.level] = []
+        }
+        levelCounts[node.level]++
+        levelNodes[node.level].push(node.name)
+    })
+    
+    Object.entries(levelCounts).forEach(([level, count]) => {
+        const configuredScale = css3dConfig.scale.levelBased?.levels[level] || css3dConfig.scale.fixed
+        console.log(`  Level ${level}: ${count} 个节点, 缩放比例: ${configuredScale}`)
+        if (process.env.NODE_ENV === 'development') {
+            console.log(`    节点名称: ${levelNodes[level].join(', ')}`)
+        }
+    })
+    
+    console.log('========================')
+}
+
+// CSS3D标签深度和遮挡管理
+const updateLabelDepthAndOcclusion = () => {
+    if (!nodeLabels || nodeLabels.length === 0) return
+
+    // 清空之前的深度数据
+    labelDepthData = []
+
+    // 计算每个标签的深度信息
+    nodeLabels.forEach((label, index) => {
+        if (!label || !label.element || !nodes[index]) return
+
+        const node = nodes[index]
+        const nodeObject = nodeObjects[index]
+        
+        if (!nodeObject) return
+
+        // 计算标签到相机的距离
+        const distanceToCamera = camera.position.distanceTo(node.position)
+        
+        // 计算标签在屏幕上的位置
+        const screenPosition = node.position.clone().project(camera)
+        
+        // 存储深度数据
+        labelDepthData.push({
+            index: index,
+            label: label,
+            node: node,
+            nodeObject: nodeObject,
+            distance: distanceToCamera,
+            screenX: screenPosition.x,
+            screenY: screenPosition.y,
+            screenZ: screenPosition.z, // 深度值，-1到1之间
+            visible: true
+        })
+    })
+
+    // 按距离排序，近的在前
+    labelDepthData.sort((a, b) => a.distance - b.distance)
+
+    // 根据距离设置z-index和透明度
+    labelDepthData.forEach((data, sortedIndex) => {
+        if (!data.label.element) return
+
+        // 基于排序后的索引设置z-index（近的标签层级更高）
+        const zIndex = 1000 + (labelDepthData.length - sortedIndex)
+        data.label.element.style.zIndex = zIndex.toString()
+
+        // 根据距离调整透明度（远的标签更透明）
+        const maxDistance = 50
+        const minDistance = 5
+        const normalizedDistance = Math.min(Math.max(data.distance, minDistance), maxDistance)
+        const distanceFactor = 1 - (normalizedDistance - minDistance) / (maxDistance - minDistance)
+        
+        // 透明度范围：0 到 1.0
+        const opacity = distanceFactor 
+        data.label.element.style.opacity = opacity.toString()
+    })
+
+    // 进行简单的遮挡检测
+    performOcclusionCulling()
+}
+
+// 简单的遮挡检测
+const performOcclusionCulling = () => {
+    if (!labelDepthData || labelDepthData.length === 0) return
+
+    labelDepthData.forEach((data, index) => {
+        if (!data.label.element) return
+
+        // 检查是否被其他节点遮挡
+        const isOccluded = checkNodeOcclusion(data)
+        
+        if (isOccluded) {
+            // 被遮挡时降低透明度
+            const currentOpacity = parseFloat(data.label.element.style.opacity) || 1
+            data.label.element.style.opacity = (currentOpacity * 0.3).toString()
+            data.visible = false
+        } else {
+            data.visible = true
+        }
+
+        // 检查标签是否在视锥体外
+        if (Math.abs(data.screenX) > 1 || Math.abs(data.screenY) > 1 || data.screenZ < -1 || data.screenZ > 1) {
+            data.label.element.style.display = 'none'
+        } else {
+            data.label.element.style.display = 'block'
+        }
+    })
+}
+
+// 检查节点是否被其他节点遮挡
+const checkNodeOcclusion = (targetData) => {
+    const { node: targetNode, distance: targetDistance } = targetData
+
+    // 从相机向目标节点发射射线
+    const direction = targetNode.position.clone().sub(camera.position).normalize()
+    occlusionRaycaster.set(camera.position, direction)
+
+    // 获取所有节点对象进行遮挡检测
+    const intersects = occlusionRaycaster.intersectObjects(nodeObjects)
+
+    // 检查是否有其他节点在目标节点前面
+    for (let i = 0; i < intersects.length; i++) {
+        const intersect = intersects[i]
+        const intersectDistance = intersect.distance
+
+        // 如果有节点更靠近相机且不是目标节点本身
+        if (intersectDistance < targetDistance - 0.5 && intersect.object.userData.node !== targetNode) {
+            return true // 被遮挡
+        }
+    }
+
+    return false // 未被遮挡
+}
+
+// 调整CSS3D标签避免重叠
+const adjustLabelOverlap = () => {
+    if (!labelDepthData || labelDepthData.length < 2) return
+
+    const labelPositions = []
+    const labelSize = 40 // 假设标签大小为40px
+
+    // 收集所有可见标签的屏幕位置
+    labelDepthData.forEach(data => {
+        if (data.visible && data.label.element && data.label.element.style.display !== 'none') {
+            const rect = data.label.element.getBoundingClientRect()
+            labelPositions.push({
+                data: data,
+                x: rect.left + rect.width / 2,
+                y: rect.top + rect.height / 2,
+                width: rect.width,
+                height: rect.height
+            })
+        }
+    })
+
+    // 检测重叠并调整位置
+    for (let i = 0; i < labelPositions.length; i++) {
+        for (let j = i + 1; j < labelPositions.length; j++) {
+            const label1 = labelPositions[i]
+            const label2 = labelPositions[j]
+
+            const dx = label1.x - label2.x
+            const dy = label1.y - label2.y
+            const distance = Math.sqrt(dx * dx + dy * dy)
+            const minDistance = (label1.width + label2.width) / 2 + 10 // 最小距离
+
+            if (distance < minDistance) {
+                // 标签重叠，调整较远的标签透明度
+                const farther = label1.data.distance > label2.data.distance ? label1 : label2
+                const currentOpacity = parseFloat(farther.data.label.element.style.opacity) || 1
+                farther.data.label.element.style.opacity = (currentOpacity * 0.5).toString()
+            }
+        }
+    }
+}
+
+// 显示层级物理信息（调试用）
+const showLevelPhysicsInfo = () => {
+    console.log('=== 层级物理系统信息 ===')
+    const physicsConfig = graphConfig.physics
+    
+    if (physicsConfig.levelBased && physicsConfig.levelBased.enabled) {
+        console.log('层级物理功能: 启用')
+        console.log('基础物理参数:')
+        console.log(`  基础斥力强度: ${physicsConfig.repulsionStrength}`)
+        console.log(`  基础引力强度: ${physicsConfig.attractionStrength}`)
+        console.log(`  基础中心力: ${physicsConfig.centerForce}`)
+        
+        console.log('层级物理配置:')
+        Object.entries(physicsConfig.levelBased.levels).forEach(([level, config]) => {
+            console.log(`  Level ${level}:`)
+            console.log(`    质量倍数: ${config.mass}`)
+            console.log(`    斥力倍数: ${config.repulsionMultiplier}`)
+            console.log(`    引力倍数: ${config.attractionMultiplier}`)
+            console.log(`    中心力倍数: ${config.centerForceMultiplier}`)
+            console.log(`    影响力倍数: ${config.influence}`)
+        })
+    } else {
+        console.log('层级物理功能: 禁用')
+    }
+    
+    console.log('节点物理状态:')
+    const levelCounts = {}
+    
+    nodes.forEach(node => {
+        if (!levelCounts[node.level]) {
+            levelCounts[node.level] = []
+        }
+        levelCounts[node.level].push(node)
+    })
+    
+    Object.entries(levelCounts).forEach(([level, levelNodes]) => {
+        const sampleNode = levelNodes[0]
+        console.log(`  Level ${level} (${levelNodes.length} 个节点):`)
+        console.log(`    有效质量: ${sampleNode.effectiveMass.toFixed(2)}`)
+        console.log(`    斥力倍数: ${sampleNode.repulsionMultiplier}`)
+        console.log(`    引力倍数: ${sampleNode.attractionMultiplier}`)
+        console.log(`    中心力倍数: ${sampleNode.centerForceMultiplier}`)
+        console.log(`    影响力倍数: ${sampleNode.influenceMultiplier}`)
+        
+        if (process.env.NODE_ENV === 'development') {
+            console.log(`    节点名称: ${levelNodes.map(n => n.name).join(', ')}`)
+        }
+    })
+    
+    console.log('========================')
+}
+
+// 切换层级物理功能
+const toggleLevelPhysics = () => {
+    const physicsConfig = graphConfig.physics.levelBased
+    physicsConfig.enabled = !physicsConfig.enabled
+    
+    console.log(`层级物理功能已${physicsConfig.enabled ? '启用' : '禁用'}`)
+    
+    // 重新更新所有节点的物理属性
+    nodes.forEach(node => {
+        node.updateLevelPhysics()
+    })
+    
+    console.log('所有节点物理属性已更新')
+}
+
+// 调整层级物理参数
+const adjustLevelPhysics = (level, property, value) => {
+    const physicsConfig = graphConfig.physics.levelBased
+    
+    if (!physicsConfig.enabled) {
+        console.log('层级物理功能未启用，请先启用该功能')
+        return
+    }
+    
+    if (!physicsConfig.levels[level.toString()]) {
+        console.log(`层级 ${level} 不存在`)
+        return
+    }
+    
+    const validProperties = ['mass', 'repulsionMultiplier', 'attractionMultiplier', 'centerForceMultiplier', 'influence']
+    if (!validProperties.includes(property)) {
+        console.log(`无效的属性: ${property}。有效属性: ${validProperties.join(', ')}`)
+        return
+    }
+    
+    const oldValue = physicsConfig.levels[level.toString()][property]
+    physicsConfig.levels[level.toString()][property] = value
+    
+    // 重新更新对应层级的节点物理属性
+    nodes.filter(node => node.level === level).forEach(node => {
+        node.updateLevelPhysics()
+    })
+    
+    console.log(`Layer ${level} ${property}: ${oldValue} → ${value}`)
+    console.log(`已更新 ${nodes.filter(node => node.level === level).length} 个节点`)
+}
+
+// 显示标签深度信息（调试用）
+const showLabelDepthInfo = () => {
+    console.log('=== CSS3D标签深度信息 ===')
+    console.log('标签总数:', nodeLabels.length)
+    console.log('深度数据数量:', labelDepthData.length)
+    
+    labelDepthData.forEach((data, index) => {
+        console.log(`标签 "${data.node.name}":`)
+        console.log(`  距离: ${data.distance.toFixed(2)}`)
+        console.log(`  屏幕位置: (${data.screenX.toFixed(3)}, ${data.screenY.toFixed(3)})`)
+        console.log(`  深度值: ${data.screenZ.toFixed(3)}`)
+        console.log(`  z-index: ${data.label.element?.style.zIndex}`)
+        console.log(`  透明度: ${data.label.element?.style.opacity}`)
+        console.log(`  可见性: ${data.visible ? '可见' : '被遮挡'}`)
+        console.log(`  显示状态: ${data.label.element?.style.display}`)
+        console.log('---')
+    })
+    
+    console.log('========================')
 }
 
 // 验证索引完整性
@@ -1069,20 +1432,49 @@ const createNodeObject = (node) => {
     // 显示节点的实际名称
     labelDiv.textContent = node.name || `节点 ${node.id}`
 
-    // 设置根据球体大小调整的文字样式
-    labelDiv.style.color = 'white'
-    labelDiv.style.fontFamily = 'Arial, sans-serif'
+    // 使用配置文件中的CSS3D样式
+    const css3dStyle = graphConfig.css3d.style
+    labelDiv.style.color = css3dStyle.color
+    labelDiv.style.fontFamily = css3dStyle.fontFamily
     labelDiv.style.fontSize = `${node.fontSize}px`
-    labelDiv.style.pointerEvents = 'none'
-    labelDiv.style.userSelect = 'none'
-    labelDiv.style.textAlign = 'center'
-    labelDiv.style.whiteSpace = 'nowrap'
-    labelDiv.style.fontWeight = 'bold'
-    labelDiv.style.textShadow = '1px 1px 2px rgba(0,0,0,0.8)'
+    labelDiv.style.pointerEvents = css3dStyle.pointerEvents || 'none'
+    labelDiv.style.userSelect = css3dStyle.userSelect
+    labelDiv.style.textAlign = css3dStyle.textAlign
+    labelDiv.style.whiteSpace = css3dStyle.whiteSpace
+    labelDiv.style.fontWeight = css3dStyle.fontWeight
     labelDiv.style.transformStyle = 'preserve-3d'
+    
+    // 设置背景和边框样式（如果配置中有）
+    if (css3dStyle.background) labelDiv.style.background = css3dStyle.background
+    if (css3dStyle.borderRadius) labelDiv.style.borderRadius = css3dStyle.borderRadius
+    if (css3dStyle.padding) labelDiv.style.padding = css3dStyle.padding
+    if (css3dStyle.backdropFilter) labelDiv.style.backdropFilter = css3dStyle.backdropFilter
+    if (css3dStyle.border) labelDiv.style.border = css3dStyle.border
+    if (css3dStyle.minWidth) labelDiv.style.minWidth = css3dStyle.minWidth
+    if (css3dStyle.textShadow) labelDiv.style.textShadow = css3dStyle.textShadow
+    
+    // 设置CSS3D标签的定位和深度管理属性
+    labelDiv.style.position = 'absolute'
+    labelDiv.style.zIndex = '1000' // 初始z-index，后续会根据距离动态调整
+    labelDiv.style.opacity = '1' // 初始透明度，后续会根据距离和遮挡调整
+    labelDiv.style.transition = 'opacity 0.2s ease-in-out' // 透明度变化动画
 
     const label = new CSS3DObject(labelDiv)
     label.position.set(0, 0, 0) // 标签位置在球心
+    
+    // 使用配置文件中的缩放参数
+    const css3dConfig = graphConfig.css3d
+    let scaleValue = css3dConfig.scale.fixed // 默认固定缩放
+    
+    // 如果启用了按层级缩放，则使用层级对应的缩放比例
+    if (css3dConfig.scale.levelBased && css3dConfig.scale.levelBased.enabled) {
+      const levelScale = css3dConfig.scale.levelBased.levels[node.level.toString()]
+      if (levelScale !== undefined) {
+        scaleValue *= levelScale
+      }
+    }
+    
+    label.scale.set(scaleValue, scaleValue, scaleValue)
 
     // 设置标签始终面向相机
     label.lookAt(camera.position)
@@ -1205,7 +1597,7 @@ const applyForces = () => {
         node.force.set(0, 0, 0)
     })
 
-    // 计算斥力（考虑节点半径）
+    // 计算斥力（考虑节点半径和层级）
     for (let i = 0; i < nodes.length; i++) {
         for (let j = i + 1; j < nodes.length; j++) {
             const nodeA = nodes[i]
@@ -1219,35 +1611,63 @@ const applyForces = () => {
 
                 const direction = nodeA.position.clone().sub(nodeB.position).normalize()
 
+                // 计算层级影响的斥力强度
+                const nodeARepulsion = repulsionStrength.value * nodeA.repulsionMultiplier
+                const nodeBRepulsion = repulsionStrength.value * nodeB.repulsionMultiplier
+                const combinedRepulsion = (nodeARepulsion + nodeBRepulsion) / 2
+
+                // 计算层级影响力
+                const nodeAInfluence = nodeA.influenceMultiplier
+                const nodeBInfluence = nodeB.influenceMultiplier
+                const combinedInfluence = (nodeAInfluence + nodeBInfluence) / 2
+
                 // 如果距离小于最小距离，增加斥力
                 const distanceMultiplier = distance < minDistance ? 2 : 1
-                const force = direction.multiplyScalar(
-                    (repulsionStrength.value * distanceMultiplier) / (effectiveDistance * effectiveDistance)
-                )
+                
+                // 应用层级影响的斥力
+                const baseForce = (combinedRepulsion * distanceMultiplier * combinedInfluence) / (effectiveDistance * effectiveDistance)
+                const forceA = direction.clone().multiplyScalar(baseForce * nodeA.repulsionMultiplier)
+                const forceB = direction.clone().multiplyScalar(baseForce * nodeB.repulsionMultiplier).negate()
 
-                nodeA.applyForce(force)
-                nodeB.applyForce(force.clone().negate())
+                nodeA.applyForce(forceA)
+                nodeB.applyForce(forceB)
             }
         }
     }
 
-    // 计算引力（连接力）
+    // 计算引力（连接力，考虑层级）
     links.forEach(link => {
         const distance = link.source.position.distanceTo(link.target.position)
         const displacement = distance - link.length
 
         if (distance > 0) {
             const direction = link.target.position.clone().sub(link.source.position).normalize()
-            const force = direction.multiplyScalar(displacement * attractionStrength.value * link.strength)
+            
+            // 计算层级影响的引力强度
+            const sourceAttraction = attractionStrength.value * link.source.attractionMultiplier
+            const targetAttraction = attractionStrength.value * link.target.attractionMultiplier
+            const combinedAttraction = (sourceAttraction + targetAttraction) / 2
 
-            link.source.applyForce(force)
-            link.target.applyForce(force.clone().negate())
+            // 计算层级影响力
+            const sourceInfluence = link.source.influenceMultiplier
+            const targetInfluence = link.target.influenceMultiplier
+            const combinedInfluence = (sourceInfluence + targetInfluence) / 2
+
+            // 应用层级影响的引力
+            const baseForce = displacement * combinedAttraction * link.strength * combinedInfluence
+            const forceToTarget = direction.clone().multiplyScalar(baseForce * link.source.attractionMultiplier)
+            const forceToSource = direction.clone().multiplyScalar(baseForce * link.target.attractionMultiplier).negate()
+
+            link.source.applyForce(forceToTarget)
+            link.target.applyForce(forceToSource)
         }
     })
 
-    // 添加中心力，防止节点飘得太远
+    // 添加中心力，防止节点飘得太远（考虑层级）
     nodes.forEach(node => {
-        const centerForceVector = node.position.clone().negate().multiplyScalar(centerForce)
+        // 根据层级调整中心力强度
+        const levelBasedCenterForce = centerForce * node.centerForceMultiplier
+        const centerForceVector = node.position.clone().negate().multiplyScalar(levelBasedCenterForce)
         node.applyForce(centerForceVector)
     })
 }
@@ -1336,52 +1756,28 @@ const animate = () => {
     // 更新物理模拟
     updatePhysics()
 
-    // 更新CSS3D标签的近大远小效果（性能优化）
+    // 更新CSS3D标签系统（性能优化）
     labelUpdateCounter++
     const shouldUpdateLabels = labelUpdateCounter % labelUpdateInterval === 0
     const cameraPositionChanged = !camera.position.equals(lastCameraPosition)
 
     if (shouldUpdateLabels || cameraPositionChanged) {
+        // 基础标签朝向更新
         nodeObjects.forEach((mesh, index) => {
             const node = nodes[index]
             const label = nodeLabels[index]
 
             if (node && mesh && label) {
-                // 计算节点到相机的距离
-                const distance = camera.position.distanceTo(node.position)
-
-                // 根据距离计算缩放比例（距离越近，缩放越大）
-                const baseScale = 0.7 // 基础缩放（降低基础大小）
-                const maxScale = 1.8 // 最大缩放（降低最大大小）
-                const minScale = 0.2 // 最小缩放（降低最小大小）
-                const nearDistance = 10 // 近距离阈值
-                const farDistance = 50 // 远距离阈值
-
-                // 使用非线性缩放函数实现更自然的近大远小效果
-                let scale = baseScale
-                if (distance <= nearDistance) {
-                    // 近距离：使用反比例函数
-                    const normalizedDistance = distance / nearDistance
-                    scale = baseScale + (maxScale - baseScale) * (1 - normalizedDistance)
-                } else if (distance >= farDistance) {
-                    // 远距离：使用指数衰减
-                    const normalizedDistance = Math.min(1, (distance - farDistance) / farDistance)
-                    scale = baseScale - (baseScale - minScale) * (1 - Math.exp(-normalizedDistance * 2))
-                } else {
-                    // 中距离：使用平滑过渡
-                    const normalizedDistance = (distance - nearDistance) / (farDistance - nearDistance)
-                    scale = baseScale - (baseScale - minScale) * normalizedDistance * 0.5
-                }
-
-                // 应用缩放到CSS3D标签
-                if (label.element) {
-                    label.element.style.transform = `scale(${scale})`
-                }
-
                 // 让标签始终面向相机
                 label.lookAt(camera.position)
             }
         })
+
+        // 深度管理和遮挡检测
+        updateLabelDepthAndOcclusion()
+        
+        // 调整标签重叠
+        adjustLabelOverlap()
 
         // 更新相机位置缓存
         lastCameraPosition.copy(camera.position)
@@ -1614,6 +2010,12 @@ onMounted(() => {
             window.showLevelFontSizes = showLevelFontSizes
             window.showCSS3DScaleInfo = showCSS3DScaleInfo
             window.adjustCSS3DScaleParams = adjustCSS3DScaleParams
+            window.showLevelScaleInfo = showLevelScaleInfo
+            window.showLabelDepthInfo = showLabelDepthInfo
+            window.updateLabelDepthAndOcclusion = updateLabelDepthAndOcclusion
+            window.showLevelPhysicsInfo = showLevelPhysicsInfo
+            window.toggleLevelPhysics = toggleLevelPhysics
+            window.adjustLevelPhysics = adjustLevelPhysics
             console.log('调试函数已暴露:')
             console.log('动态节点功能:')
             console.log('- window.testDynamicNodes(): 测试动态节点功能')
@@ -1630,6 +2032,13 @@ onMounted(() => {
             console.log('CSS3D标签功能:')
             console.log('- window.showCSS3DScaleInfo(): 显示CSS3D标签缩放信息')
             console.log('- window.adjustCSS3DScaleParams(nearDistance, farDistance, maxScale, minScale): 调整缩放参数')
+            console.log('- window.showLevelScaleInfo(): 显示层级缩放配置和状态')
+            console.log('- window.showLabelDepthInfo(): 显示标签深度和遮挡信息')
+            console.log('- window.updateLabelDepthAndOcclusion(): 手动更新标签深度管理')
+            console.log('层级物理功能:')
+            console.log('- window.showLevelPhysicsInfo(): 显示层级物理系统信息')
+            console.log('- window.toggleLevelPhysics(): 切换层级物理功能')
+            console.log('- window.adjustLevelPhysics(level, property, value): 调整层级物理参数')
         }
     }, 100)
 })
@@ -1707,6 +2116,12 @@ onUnmounted(() => {
         delete window.showLevelFontSizes
         delete window.showCSS3DScaleInfo
         delete window.adjustCSS3DScaleParams
+        delete window.showLevelScaleInfo
+        delete window.showLabelDepthInfo
+        delete window.updateLabelDepthAndOcclusion
+        delete window.showLevelPhysicsInfo
+        delete window.toggleLevelPhysics
+        delete window.adjustLevelPhysics
     }
 })
 
@@ -1766,32 +2181,28 @@ onUnmounted(() => {
     animation: fadeOutScale 0.5s ease-in forwards;
 }
 
+/* CSS3D动画 - 数值来自配置文件 */
 @keyframes fadeInScale {
     0% {
         opacity: 0;
-        transform: scale(0.3);
     }
 
     60% {
         opacity: 0.8;
-        transform: scale(1.1);
     }
 
     100% {
         opacity: 1;
-        transform: scale(1);
     }
 }
 
 @keyframes fadeOutScale {
     0% {
         opacity: 1;
-        transform: scale(1);
     }
 
     100% {
         opacity: 0;
-        transform: scale(0.3);
     }
 }
 </style>
