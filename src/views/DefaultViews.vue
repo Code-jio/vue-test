@@ -102,7 +102,7 @@ onMounted(async () => {
     // fire.addToScene(baseScene.scene, baseScene.camera); // 传递相机参数以支持Billboard效果
 
 
-    // 指定轮廓的水体生成 - 创建演示水体
+    // 指定轮廓的水体生成 - 创建演示异形水体
     createWaterMarker({
         height: 30.0,
         position: { x: 50, y: 10, z: 50 },
@@ -110,7 +110,10 @@ onMounted(async () => {
             { x: -15, y: 10, z: -15 },
             { x: 15, y: 10, z: -15 },
             { x: 15, y: 10, z: 15 },
-            { x: -15, y: 10, z: 15 }
+            { x: -15, y: 10, z: 15 },
+            { x: -10, y: 10, z: 10 },
+            { x: 10, y: 10, z: 10 },
+            { x: 15, y: 10, z: -15 },
         ],
         waterColor: 0x4a90e2,
         transparency: 0.7,
