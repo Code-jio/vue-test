@@ -55,8 +55,7 @@ function saveToJson(filePaths, outputFile) {
     try {
         const data = {
             totalCount: filePaths.length,
-            files: filePaths,
-            scanTime: new Date().toISOString()
+            files: filePaths
         };
         
         fs.writeFileSync(outputFile, JSON.stringify(data, null, 2), 'utf8');

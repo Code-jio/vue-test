@@ -61,6 +61,7 @@ import {
     loadModel,
     createPathDemo,
     createFireMarker,
+    createWaterMarker,
 
     baseScene,
     engine,
@@ -92,14 +93,33 @@ onMounted(async () => {
     setupBuildingClickHandler();
     
     // 创建火焰效果
-    let fire = createFireMarker({
-        position: [10, 30, 10], // 设置在容易看到的位置，提高高度
-        size: 20.0, // 大幅增大尺寸
-        intensity: 1.0,
-        debugMode: true, // 启用调试模式
-    });
-    fire.addToScene(baseScene.scene, baseScene.camera); // 传递相机参数以支持Billboard效果
+    // let fire = createFireMarker({
+    //     position: [10, 30, 10], // 设置在容易看到的位置，提高高度
+    //     size: 20.0, // 大幅增大尺寸
+    //     intensity: 1.0,
+    //     debugMode: true, // 启用调试模式
+    // });
+    // fire.addToScene(baseScene.scene, baseScene.camera); // 传递相机参数以支持Billboard效果
 
+
+    // 指定轮廓的水体生成 - 创建演示水体
+    createWaterMarker({
+        height: 30.0,
+        position: { x: 50, y: 10, z: 50 },
+        contour: [
+            { x: -15, y: 10, z: -15 },
+            { x: 15, y: 10, z: -15 },
+            { x: 15, y: 10, z: 15 },
+            { x: -15, y: 10, z: 15 }
+        ],
+        waterColor: 0x4a90e2,
+        transparency: 0.7,
+        waveScale: 1.2,
+        distortionScale: 3.0,
+        onCreated: (waterMarker) => {
+            console.log('🌊 演示水体创建完成:', waterMarker);
+        }
+    });
 
     // await createPathDemo('/MAN.gltf')
 

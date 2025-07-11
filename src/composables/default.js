@@ -10,6 +10,7 @@ let mousePickPlugin = null;
 let buildingControlPlugin = null;
 let css3dPlugin = null;
 let floorManager = null;
+let waterMakerPlugin = null;
 
 const useEngine = () => {
     try {
@@ -30,7 +31,7 @@ const engineInitialize = async () => {
                     floorConfig: {
                         enabled: true,
                         type: 'water',
-                        size: 25000,
+                        size: 250,
                         position: [0, 0, 0],
                         waterConfig: {
                             textureWidth: 512,
@@ -150,6 +151,13 @@ const engineInitialize = async () => {
                 }
             }
         },
+    }).register({
+        name: "WaterMakerPlugin",
+        path: "/plugins/webgl/WaterMakerPlugin",
+        pluginClass: EngineKernel.WaterMarkerPlugin,
+        userData: {
+            scenePlugin: baseScene,
+        },
     });
 
     // 启动渲染循环
@@ -162,6 +170,7 @@ const engineInitialize = async () => {
     buildingControlPlugin = engine.getPlugin("BuildingControlPlugin");
     css3dPlugin = engine.getPlugin("CSS3DRenderPlugin");
     modelMarkerPlugin = engine.getPlugin("ModelMarkerPlugin");
+    waterMakerPlugin = engine.getPlugin("WaterMakerPlugin");
 
     // 获取楼层管理器实例
     floorManager = baseScene.floorManager;
@@ -612,6 +621,81 @@ const createFireMarker = (options = {}) => {
 }
 
 
+// 指定轮廓的水体生成
+const createWaterMarker = (options = {}) => {
+    try {
+        // 检查插件是否已初始化
+        if (!waterMakerPlugin) {
+            throw new Error('WaterMakerPlugin 未初始化');
+        }
+
+        // 参数验证
+        if (!options.contour || !Array.isArray(options.contour) || options.contour.length < 3) {
+            throw new Error('水体轮廓必须是包含至少3个点的数组');
+        }
+        
+        if (!options.height || options.height <= 0) {
+            throw new Error('水体高度必须大于0');
+        }
+
+        // 转换轮廓坐标格式：{x, y, z} -> THREE.Vector3
+        const contour = options.contour.map(point => {
+            if (typeof point !== 'object' || point.x === undefined || point.z === undefined) {
+                throw new Error('轮廓点必须包含x和z坐标');
+            }
+            return new EngineKernel.THREE.Vector3(point.x, point.y || 0, point.z);
+        });
+
+        // 转换位置格式
+        const position = options.position 
+            ? new EngineKernel.THREE.Vector3(options.position.x || 0, options.position.y || 0, options.position.z || 0)
+            : new EngineKernel.THREE.Vector3(0, 0, 0);
+
+        // 创建水体配置
+        const waterConfig = {
+            height: options.height,
+            contour: contour,
+            position: position,
+            waterColor: options.waterColor || 0x4a90e2,
+            transparency: options.transparency || 0.7,
+            reflectivity: options.reflectivity || 0.8,
+            flowSpeed: options.flowSpeed || 0.5,
+            waveScale: options.waveScale || 1.0,
+            distortionScale: options.distortionScale || 3.7,
+            enableAnimation: options.enableAnimation !== false, // 默认启用动画
+            refractionRatio: options.refractionRatio || 1.33,
+            waterNormalsTexture: options.waterNormalsTexture
+        };
+
+        // 使用 WaterMakerPlugin 创建水体实例
+        const waterMarker = waterMakerPlugin.createWaterMarker(waterConfig);
+
+        console.log('🌊 使用 WaterMakerPlugin 创建水体成功', {
+            height: options.height,
+            contourPoints: contour.length,
+            position: position,
+            color: `#${waterConfig.waterColor.toString(16)}`
+        });
+
+        // 执行回调
+        if (typeof options.onCreated === 'function') {
+            options.onCreated(waterMarker);
+        }
+
+        return waterMarker;
+
+    } catch (error) {
+        console.error('❌ 创建水体失败:', error.message);
+        
+        // 执行错误回调
+        if (typeof options.onError === 'function') {
+            options.onError(error);
+        }
+        
+        throw error;
+    }
+}
+
 
 export {
     useEngine,
@@ -620,7 +704,7 @@ export {
     loadModel,
     createPathDemo,
     createFireMarker,
-
+    createWaterMarker,
 
     baseScene,
     engine,
@@ -631,4 +715,5 @@ export {
     modelMarkerPlugin,
     css3dPlugin,
     floorManager,
+    waterMakerPlugin,
 }
