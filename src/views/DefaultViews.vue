@@ -95,9 +95,10 @@ onMounted(async () => {
     // 创建火焰效果
     let fire = createFireMarker({
         position: [10, 30, 10], // 设置在容易看到的位置，提高高度
-        size: 500.0, // 大幅增大尺寸
+        size: 20.0, // 大幅增大尺寸
         intensity: 1.0,
         debugMode: true, // 启用调试模式
+        renderOrder: 1, // 确保在水面之上渲染
     });
     console.log('🔥 火焰效果:', fire);
     fire.addToScene(baseScene.scene, baseScene.camera); // 传递相机参数以支持Billboard效果
