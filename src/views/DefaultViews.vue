@@ -89,19 +89,22 @@ onMounted(async () => {
 
     console.log('🏢 建筑模型解析结果:', buildingControlPlugin,baseScene);
 
-    // 设置点击事件监听
-    setupBuildingClickHandler();
+    // // 设置点击事件监听
+    // setupBuildingClickHandler();
     
-    // 创建火焰效果
-    let fire = createFireMarker({
-        position: [10, 30, 10], // 设置在容易看到的位置，提高高度
-        size: 20.0, // 大幅增大尺寸
-        intensity: 1.0,
-        debugMode: true, // 启用调试模式
-        renderOrder: 1, // 确保在水面之上渲染
-    });
-    console.log('🔥 火焰效果:', fire);
-    fire.addToScene(baseScene.scene, baseScene.camera); // 传递相机参数以支持Billboard效果
+    // 设置鼠标点击事件监听 - 在点击位置创建CSS3D对象
+    // setupClickToCreateCSS3D();
+    
+    // // 创建火焰效果
+    // let fire = createFireMarker({
+    //     position: [10, 30, 10], // 设置在容易看到的位置，提高高度
+    //     size: 20.0, // 大幅增大尺寸
+    //     intensity: 1.0,
+    //     debugMode: true, // 启用调试模式
+    //     renderOrder: 1, // 确保在水面之上渲染
+    // });
+    // console.log('🔥 火焰效果:', fire);
+    // fire.addToScene(baseScene.scene, baseScene.camera); // 传递相机参数以支持Billboard效果
 
 
     // // 指定轮廓的水体生成 - 创建演示异形水体
@@ -130,6 +133,44 @@ onMounted(async () => {
 
     // 方法2：使用测试函数
     // testPathLineRendering()
+
+})
+// console.log(EngineKernel)
+EngineKernel.eventBus.on('mouse-pick:object-picked', (object) => {
+    // console.log('选中对象:', object);
+            // 获取点击位置的3D坐标
+        if (object && object.results[0].localPosition) {
+            const position = {
+                x: object.results[0].localPosition.x,
+                y: object.results[0].localPosition.y , // 稍微抬高一点，避免与地面重叠
+                z: object.results[0].localPosition.z
+            };
+            
+            console.log('在模型位置创建CSS3D对象:', position);
+            
+            try {
+                const css3dObject = createCSS3DAtPosition(position);
+                console.log('✅ CSS3D对象创建完成:', css3dObject);
+            } catch (error) {
+                console.error('创建CSS3D对象失败:', error);
+            }
+        } else if (object && object.results && object.results.length > 0 && object.results[0].worldPosition) {
+            // 备用数据结构
+            const position = {
+                x: object.results[0].worldPosition.x,
+                y: object.results[0].worldPosition.y + 2,
+                z: object.results[0].worldPosition.z
+            };
+            
+            console.log('在模型位置创建CSS3D对象(备用):', position);
+            
+            try {
+                const css3dObject = createCSS3DAtPosition(position);
+                console.log('✅ CSS3D对象创建完成:', css3dObject);
+            } catch (error) {
+                console.error('创建CSS3D对象失败:', error);
+            }
+        }
 })
 
 // 设置建筑点击处理器
@@ -149,6 +190,36 @@ const setupBuildingClickHandler = () => {
     // EngineKernel.eventBus.on('mouse-pick:emptyClick', async () => {
     //     await hideModelInfo();
     // });
+};
+
+// 在指定位置创建CSS3D对象
+const createCSS3DAtPosition = async (position) => {
+    if (!modelMessageRef.value || !modelMessageRef.value.$el) {
+        throw new Error('ModelMessage组件未准备就绪');
+    }
+
+    const options = {
+        element: modelMessageRef.value.$el,
+        position: [position.x, position.y, position.z],
+        display: true,
+        opacity: 1,
+        offset: 0,
+        scale: 0.05,
+        complete: () => {
+            console.log('✅ CSS3D对象在点击位置创建完成');
+        },
+    };
+
+    // 在指定位置创建css3D对象
+    const object3D = css3dPlugin.createCSS3DObject(options);
+    
+    // 更新当前CSS3D对象引用
+    currentCSS3DObject.value = object3D;
+    
+    // 显示模型信息
+    await showModelInfo();
+    
+    return object3D;
 };
 
 // 隐藏模型信息

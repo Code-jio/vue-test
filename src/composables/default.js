@@ -59,12 +59,18 @@ const engineInitialize = async () => {
                 pluginClass: EngineKernel.ResourceReaderPlugin,
                 userData: {
                     url: "/",
+                    ktx2Path: "./ktx2/",
+                    enableKTX2: true,
                 },
             }
         ]
     })
 
     baseScene = engine.getPlugin("baseScenePlugin");
+    resourceReaderPlugin = engine.getPlugin("ResourceReaderPlugin");
+    resourceReaderPlugin.init(baseScene.renderer);
+
+    console.log("🔧 ResourceReaderPlugin状态:", resourceReaderPlugin)
 
     // 后续renderLoop 考虑集成至其他插件
     engine.register({
@@ -80,6 +86,7 @@ const engineInitialize = async () => {
         pluginClass: EngineKernel.ModelMarker,
         userData: {
             scene: baseScene.scene,
+            resourceReaderPlugin: resourceReaderPlugin,
         },
     }).register({
         name: "SkyBoxPlugin",
@@ -165,8 +172,8 @@ const engineInitialize = async () => {
     if (renderLoop) {
         renderLoop.initialize();
     }
-    resourceReaderPlugin = engine.getPlugin("ResourceReaderPlugin");
     mousePickPlugin = engine.getPlugin("MousePickPlugin");
+    mousePickPlugin.enabled = true;
     buildingControlPlugin = engine.getPlugin("BuildingControlPlugin");
     css3dPlugin = engine.getPlugin("CSS3DRenderPlugin");
     modelMarkerPlugin = engine.getPlugin("ModelMarkerPlugin");
@@ -205,12 +212,6 @@ const engineInitialize = async () => {
             return floorManager ? floorManager.getWaterParams() : null;
         };
         
-        console.log('🌊 简化水面控制方法已暴露到全局:');
-        console.log('- window.setWaterAnimationSpeed(speed) // 0.1-5.0 动画速度');
-        console.log('- window.setWaterWaveIntensity(intensity) // 0.0-3.0 波浪强度');
-        console.log('- window.setWaterDistortionScale(scale) // 0.0-8.0 扭曲程度');
-        console.log('- window.setWaterColor(0xHEXCOLOR) // 水面颜色');
-        console.log('- window.getWaterParams() // 获取当前参数');
     }
 
     modelMarkerPlugin.init(engine)
@@ -540,13 +541,6 @@ const createFireMarker = (options = {}) => {
             
             // 调试和测试方法
             testVisibility: () => {
-                console.log('🔥 FireMarker 测试可见性:');
-                console.log('- 位置:', fire.getPosition());
-                console.log('- 可见性:', fire.getVisible());
-                console.log('- 配置:', fire.getConfig());
-                console.log('- 网格:', fire.getMesh());
-                console.log('- 渲染任务ID:', fire.renderTaskId);
-                
                 fire.setPosition([0, 15, 0]);
                 fire.setVisible(true);
                 fire.setIntensity(1.0);
@@ -589,32 +583,6 @@ const createFireMarker = (options = {}) => {
                 }
             }
         };
-        console.log('🔥 优化版 FireMarker 控制方法已暴露到全局:');
-        console.log('📍 基础控制:');
-        console.log('- window.fireMarkerControls.setPosition(x, y, z)');
-        console.log('- window.fireMarkerControls.setSize(size)');
-        console.log('- window.fireMarkerControls.setIntensity(0-1)');
-        console.log('- window.fireMarkerControls.setVisible(true/false)');
-        console.log('');
-        console.log('🌪️ 高级效果:');
-        console.log('- window.fireMarkerControls.setWind(x, y, strength) // 设置风向和强度');
-        console.log('- window.fireMarkerControls.setCoreIntensity(0-3) // 核心亮度');
-        console.log('- window.fireMarkerControls.setTurbulence(0-3) // 湍流强度');
-        console.log('- window.fireMarkerControls.setSparkle(0-1) // 火星效果');
-        console.log('');
-        console.log('🎨 快速预设:');
-        console.log('- window.fireMarkerControls.presets.gentle() // 温和火焰');
-        console.log('- window.fireMarkerControls.presets.wild() // 狂野火焰');
-        console.log('- window.fireMarkerControls.presets.mystical() // 神秘火焰');
-        console.log('- window.fireMarkerControls.presets.windy() // 风中火焰');
-        console.log('');
-        console.log('🎭 动态演示:');
-        console.log('- window.fireMarkerControls.demo.windDemo() // 风向变化演示');
-        console.log('- window.fireMarkerControls.demo.pulseDemo() // 强度脉冲演示');
-        console.log('');
-        console.log('🔧 工具方法:');
-        console.log('- window.fireMarkerControls.dispose() // 清理火焰');
-        console.log('- window.fireMarkerControls.testVisibility() // 调试可见性');
     }
     
     return fire;

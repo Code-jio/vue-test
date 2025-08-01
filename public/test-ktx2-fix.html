@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KTX2纹理加载修复测试</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 15px;
+            margin-bottom: 25px;
+        }
+        
+        .button {
+            background: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 5px;
+            transition: background 0.3s;
+        }
+        
+        .button:hover {
+            background: #0056b3;
+        }
+        
+        .button.success {
+            background: #28a745;
+        }
+        
+        .button.warning {
+            background: #ffc107;
+            color: #333;
+        }
+        
+        .button.danger {
+            background: #dc3545;
+        }
+        
+        .status {
+            padding: 15px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .status.warning {
+            background: #fff3cd;
+            color: #856404;
+            border: 1px solid #ffeaa7;
+        }
+        
+        .status.error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        
+        .log {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 6px;
+            padding: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .info-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 6px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .info-item h4 {
+            margin: 0 0 10px 0;
+            color: #333;
+        }
+        
+        .info-item ul {
+            margin: 0;
+            padding-left: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 KTX2纹理加载修复工具</h1>
+            <p>解决 "THREE.GLTFLoader: Couldn't load texture baseColor_2.ktx2" 错误</p>
+        </div>
+
+        <div class="info-grid">
+            <div class="info-item">
+                <h4>🎯 这个工具的作用</h4>
+                <ul>
+                    <li>自动检测KTX2支持问题</li>
+                    <li>修复ResourceReaderPlugin配置</li>
+                    <li>提供降级解决方案</li>
+                    <li>生成可用的加载器实例</li>
+                </ul>
+            </div>
+            
+            <div class="info-item">
+                <h4>🚀 快速开始</h4>
+                <ul>
+                    <li>点击"一键修复"按钮</li>
+                    <li>查看控制台输出</li>
+                    <li>使用修复后的加载器</li>
+                    <li>如有问题运行调试工具</li>
+                </ul>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button class="button success" onclick="runOneClickFix()">
+                🚀 一键修复所有问题
+            </button>
+            <button class="button" onclick="runDebugCheck()">
+                🔍 运行调试检查
+            </button>
+            <button class="button" onclick="testBasicFix()">
+                🔧 基础修复测试
+            </button>
+            <button class="button warning" onclick="clearLog()">
+                🧹 清空日志
+            </button>
+        </div>
+
+        <div id="status-container"></div>
+
+        <div class="container">
+            <h3>📋 修复日志</h3>
+            <div id="log-output" class="log">等待运行修复工具...\n</div>
+        </div>
+
+        <div class="container">
+            <h3>💡 使用说明</h3>
+            <div class="info-grid">
+                <div class="info-item">
+                    <h4>修复成功后</h4>
+                    <ul>
+                        <li><code>window.fixedGLTFLoader</code> - 修复后的GLTF加载器</li>
+                        <li><code>window.fixedKTX2Loader</code> - KTX2加载器</li>
+                        <li><code>window.fixedResourceReaderPlugin</code> - 修复后的插件</li>
+                    </ul>
+                </div>
+                <div class="info-item">
+                    <h4>在代码中使用</h4>
+                    <ul>
+                        <li>替换原有的GLTFLoader</li>
+                        <li>或使用修复后的ResourceReaderPlugin</li>
+                        <li>确保KTX2纹理文件路径正确</li>
+                        <li>检查服务器MIME类型配置</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入修复脚本 -->
+    <script src="fix-ktx2-loading.js"></script>
+    <script src="debug-ktx2-loading.js"></script>
+
+    <script>
+        // 日志输出管理
+        const logOutput = document.getElementById('log-output')
+        const statusContainer = document.getElementById('status-container')
+
+        function appendLog(message) {
+            const timestamp = new Date().toLocaleTimeString()
+            logOutput.textContent += `[${timestamp}] ${message}\n`
+            logOutput.scrollTop = logOutput.scrollHeight
+        }
+
+        function showStatus(message, type = 'info') {
+            const statusDiv = document.createElement('div')
+            statusDiv.className = `status ${type}`
+            statusDiv.textContent = message
+            statusContainer.innerHTML = ''
+            statusContainer.appendChild(statusDiv)
+        }
+
+        function clearLog() {
+            logOutput.textContent = '日志已清空\n'
+            statusContainer.innerHTML = ''
+        }
+
+        // 重写console.log以显示在页面上
+        const originalLog = console.log
+        const originalWarn = console.warn
+        const originalError = console.error
+
+        console.log = function(...args) {
+            originalLog.apply(console, args)
+            appendLog('📋 ' + args.join(' '))
+        }
+
+        console.warn = function(...args) {
+            originalWarn.apply(console, args)
+            appendLog('⚠️ ' + args.join(' '))
+        }
+
+        console.error = function(...args) {
+            originalError.apply(console, args)
+            appendLog('❌ ' + args.join(' '))
+        }
+
+        // 修复功能
+        async function runOneClickFix() {
+            showStatus('正在运行一键修复...', 'info')
+            appendLog('=== 开始一键修复 ===')
+            
+            try {
+                const result = await oneClickFix({
+                    ktx2Path: '/ktx2/',
+                    debugMode: true
+                })
+                
+                if (result.basicFix?.success) {
+                    showStatus('✅ 一键修复成功！KTX2问题已解决', 'success')
+                    appendLog('=== 一键修复完成 ===')
+                    
+                    // 显示可用的全局变量
+                    appendLog('💡 可用的全局变量:')
+                    if (window.fixedGLTFLoader) {
+                        appendLog('  - window.fixedGLTFLoader (修复后的GLTFLoader)')
+                    }
+                    if (window.fixedResourceReaderPlugin) {
+                        appendLog('  - window.fixedResourceReaderPlugin (修复后的ResourceReaderPlugin)')
+                    }
+                } else {
+                    showStatus('⚠️ 修复部分成功，请查看日志', 'warning')
+                }
+            } catch (error) {
+                showStatus('❌ 一键修复失败: ' + error.message, 'error')
+                appendLog('=== 一键修复失败 ===')
+            }
+        }
+
+        async function runDebugCheck() {
+            showStatus('正在运行调试检查...', 'info')
+            appendLog('=== 开始调试检查 ===')
+            
+            try {
+                const result = await debugKTX2Loading()
+                showStatus('✅ 调试检查完成，请查看详细日志', 'success')
+                appendLog('=== 调试检查完成 ===')
+            } catch (error) {
+                showStatus('❌ 调试检查失败: ' + error.message, 'error')
+                appendLog('=== 调试检查失败 ===')
+            }
+        }
+
+        async function testBasicFix() {
+            showStatus('正在运行基础修复测试...', 'info')
+            appendLog('=== 开始基础修复测试 ===')
+            
+            try {
+                const result = await fixKTX2Loading({
+                    debugMode: true,
+                    enableFallback: true
+                })
+                
+                if (result.success) {
+                    showStatus('✅ 基础修复测试成功', 'success')
+                } else {
+                    showStatus('⚠️ 基础修复使用了降级方案', 'warning')
+                }
+                appendLog('=== 基础修复测试完成 ===')
+            } catch (error) {
+                showStatus('❌ 基础修复测试失败: ' + error.message, 'error')
+                appendLog('=== 基础修复测试失败 ===')
+            }
+        }
+
+        // 页面加载完成后的初始化
+        window.addEventListener('load', function() {
+            appendLog('🚀 KTX2修复工具已就绪')
+            appendLog('💡 点击上方按钮开始修复KTX2纹理加载问题')
+            
+            // 检查必要的文件是否存在
+            fetch('/ktx2/basis_transcoder.wasm', { method: 'HEAD' })
+                .then(response => {
+                    if (response.ok) {
+                        appendLog('✅ KTX2解码器文件检查通过')
+                    } else {
+                        appendLog('⚠️ KTX2解码器文件可能不存在，但仍可尝试修复')
+                    }
+                })
+                .catch(() => {
+                    appendLog('⚠️ 无法检查KTX2解码器文件状态')
+                })
+        })
+    </script>
+</body>
+</html> 

@@ -1,9 +1,209 @@
 {
   "asset": {
-    "version": "2.0",
-    "generator": "babylon.js glTF exporter for 3dsmax 2023 v20240312.5"
+    "generator": "glTF-Transform v3.10.1",
+    "version": "2.0"
   },
-  "scene": 0,
+  "accessors": [
+    {
+      "name": "accessorIndices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 28944
+    },
+    {
+      "name": "accessorUVs",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 7968
+    },
+    {
+      "name": "accessorPositions",
+      "type": "VEC3",
+      "componentType": 5122,
+      "count": 7968,
+      "max": [
+        32767,
+        2384,
+        18642
+      ],
+      "min": [
+        -32767,
+        -2384,
+        -18642
+      ],
+      "normalized": true
+    },
+    {
+      "name": "accessorNormals",
+      "type": "VEC3",
+      "componentType": 5122,
+      "count": 7968,
+      "normalized": true
+    },
+    {
+      "name": "accessorIndices",
+      "type": "SCALAR",
+      "componentType": 5123,
+      "count": 23958
+    },
+    {
+      "name": "accessorUVs",
+      "type": "VEC2",
+      "componentType": 5126,
+      "count": 6209
+    },
+    {
+      "name": "accessorPositions",
+      "type": "VEC3",
+      "componentType": 5122,
+      "count": 6209,
+      "max": [
+        32767,
+        2384,
+        14369
+      ],
+      "min": [
+        -7732,
+        -2384,
+        -16846
+      ],
+      "normalized": true
+    },
+    {
+      "name": "accessorNormals",
+      "type": "VEC3",
+      "componentType": 5122,
+      "count": 6209,
+      "normalized": true
+    }
+  ],
+  "bufferViews": [
+    {
+      "buffer": 0,
+      "byteOffset": 0,
+      "byteLength": 34909
+    },
+    {
+      "buffer": 0,
+      "byteOffset": 34909,
+      "byteLength": 24611
+    }
+  ],
+  "samplers": [
+    {
+      "magFilter": 9729,
+      "minFilter": 9987,
+      "wrapS": 10497,
+      "wrapT": 10497
+    }
+  ],
+  "textures": [
+    {
+      "source": 0,
+      "sampler": 0
+    }
+  ],
+  "images": [
+    {
+      "name": "T_TY_MuTou_10.png_etc1s",
+      "mimeType": "image/ktx2",
+      "uri": "baseColor.ktx2"
+    }
+  ],
+  "buffers": [
+    {
+      "uri": "MAIN_BUILDING_2F_床柜.bin",
+      "byteLength": 59520
+    }
+  ],
+  "materials": [
+    {
+      "name": "20 - Default",
+      "pbrMetallicRoughness": {
+        "roughnessFactor": 0.450053632,
+        "metallicFactor": 0,
+        "baseColorTexture": {
+          "index": 0
+        }
+      }
+    },
+    {
+      "name": "19 - Default",
+      "pbrMetallicRoughness": {
+        "baseColorFactor": [
+          0.6745098,
+          0.6745098,
+          0.6745098,
+          1
+        ],
+        "roughnessFactor": 0.450053632,
+        "metallicFactor": 0
+      }
+    }
+  ],
+  "meshes": [
+    {
+      "name": "MAIN_BUILDING_2F_床柜",
+      "primitives": [
+        {
+          "attributes": {
+            "TEXCOORD_0": 1,
+            "POSITION": 2,
+            "NORMAL": 3
+          },
+          "mode": 4,
+          "material": 0,
+          "indices": 0,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 0,
+              "attributes": {
+                "TEXCOORD_0": 0,
+                "POSITION": 1,
+                "NORMAL": 2
+              }
+            }
+          }
+        },
+        {
+          "attributes": {
+            "TEXCOORD_0": 5,
+            "POSITION": 6,
+            "NORMAL": 7
+          },
+          "mode": 4,
+          "material": 1,
+          "indices": 4,
+          "extensions": {
+            "KHR_draco_mesh_compression": {
+              "bufferView": 1,
+              "attributes": {
+                "TEXCOORD_0": 0,
+                "POSITION": 1,
+                "NORMAL": 2
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "nodes": [
+    {
+      "name": "MAIN_BUILDING_2F_床柜",
+      "translation": [
+        88.3891177378601,
+        4.000000415762787,
+        31.91898112316284
+      ],
+      "scale": [
+        12.370176792144775,
+        12.370176792144775,
+        12.370176792144775
+      ],
+      "mesh": 0
+    }
+  ],
   "scenes": [
     {
       "nodes": [
@@ -11,193 +211,13 @@
       ]
     }
   ],
-  "nodes": [
-    {
-      "mesh": 0,
-      "translation": [
-        88.3891144,
-        3.10000038,
-        31.9189816
-      ],
-      "name": "MAIN_BUILDING_2F_床柜"
-    }
+  "scene": 0,
+  "extensionsUsed": [
+    "KHR_mesh_quantization",
+    "KHR_draco_mesh_compression"
   ],
-  "meshes": [
-    {
-      "primitives": [
-        {
-          "attributes": {
-            "POSITION": 1,
-            "NORMAL": 2,
-            "TEXCOORD_0": 3
-          },
-          "indices": 0,
-          "material": 0
-        },
-        {
-          "attributes": {
-            "POSITION": 5,
-            "NORMAL": 6,
-            "TEXCOORD_0": 7
-          },
-          "indices": 4,
-          "material": 1
-        }
-      ],
-      "name": "MAIN_BUILDING_2F_床柜"
-    }
-  ],
-  "accessors": [
-    {
-      "bufferView": 0,
-      "componentType": 5123,
-      "count": 39384,
-      "type": "SCALAR",
-      "name": "accessorIndices"
-    },
-    {
-      "bufferView": 1,
-      "componentType": 5126,
-      "count": 10752,
-      "max": [
-        12.37018,
-        1.80000007,
-        7.03766441
-      ],
-      "min": [
-        -12.3701735,
-        0.0,
-        -7.03766537
-      ],
-      "type": "VEC3",
-      "name": "accessorPositions"
-    },
-    {
-      "bufferView": 1,
-      "byteOffset": 129024,
-      "componentType": 5126,
-      "count": 10752,
-      "type": "VEC3",
-      "name": "accessorNormals"
-    },
-    {
-      "bufferView": 2,
-      "componentType": 5126,
-      "count": 10752,
-      "type": "VEC2",
-      "name": "accessorUVs"
-    },
-    {
-      "bufferView": 0,
-      "byteOffset": 78768,
-      "componentType": 5123,
-      "count": 32184,
-      "type": "SCALAR",
-      "name": "accessorIndices"
-    },
-    {
-      "bufferView": 1,
-      "byteOffset": 258048,
-      "componentType": 5126,
-      "count": 8568,
-      "max": [
-        12.37018,
-        1.80000007,
-        5.42415857
-      ],
-      "min": [
-        -2.91923642,
-        0.0,
-        -6.358807
-      ],
-      "type": "VEC3",
-      "name": "accessorPositions"
-    },
-    {
-      "bufferView": 1,
-      "byteOffset": 360864,
-      "componentType": 5126,
-      "count": 8568,
-      "type": "VEC3",
-      "name": "accessorNormals"
-    },
-    {
-      "bufferView": 2,
-      "byteOffset": 86016,
-      "componentType": 5126,
-      "count": 8568,
-      "type": "VEC2",
-      "name": "accessorUVs"
-    }
-  ],
-  "bufferViews": [
-    {
-      "buffer": 0,
-      "byteLength": 143136,
-      "name": "bufferViewScalar"
-    },
-    {
-      "buffer": 0,
-      "byteOffset": 143136,
-      "byteLength": 463680,
-      "byteStride": 12,
-      "name": "bufferViewFloatVec3"
-    },
-    {
-      "buffer": 0,
-      "byteOffset": 606816,
-      "byteLength": 154560,
-      "byteStride": 8,
-      "name": "bufferViewFloatVec2"
-    }
-  ],
-  "buffers": [
-    {
-      "uri": "MAIN_BUILDING_2F_床柜.bin",
-      "byteLength": 761376
-    }
-  ],
-  "materials": [
-    {
-      "pbrMetallicRoughness": {
-        "baseColorTexture": {
-          "index": 0
-        },
-        "metallicFactor": 0.0,
-        "roughnessFactor": 0.450053632
-      },
-      "name": "20 - Default"
-    },
-    {
-      "pbrMetallicRoughness": {
-        "baseColorFactor": [
-          0.6745098,
-          0.6745098,
-          0.6745098,
-          1.0
-        ],
-        "metallicFactor": 0.0,
-        "roughnessFactor": 0.450053632
-      },
-      "name": "19 - Default"
-    }
-  ],
-  "textures": [
-    {
-      "sampler": 0,
-      "source": 0,
-      "name": "T_TY_MuTou_10.png"
-    }
-  ],
-  "images": [
-    {
-      "uri": "T_TY_MuTou_10.png"
-    }
-  ],
-  "samplers": [
-    {
-      "magFilter": 9729,
-      "minFilter": 9987
-    }
+  "extensionsRequired": [
+    "KHR_mesh_quantization",
+    "KHR_draco_mesh_compression"
   ]
 }

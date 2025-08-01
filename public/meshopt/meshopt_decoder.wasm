@@ -1,0 +1,5 @@
+# Placeholder for meshopt_decoder.wasm
+# This file is usually handled automatically by Three.js
+# If needed separately, download from: https://github.com/zeux/meshoptimizer/releases
+# 
+# Note: Most Three.js implementations handle this internally 
