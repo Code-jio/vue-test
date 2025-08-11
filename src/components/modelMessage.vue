@@ -97,7 +97,6 @@ const formatNumber = (num) => {
   border: 1px solid rgba(255, 255, 255, 0.3);
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   overflow: hidden;
-  transition: all 0.3s ease;
 }
 
 .model-info-card:hover {
@@ -138,12 +137,10 @@ const formatNumber = (num) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.2s ease;
 }
 
 .close-btn:hover {
   background: rgba(255, 255, 255, 0.2);
-  transform: rotate(90deg);
 }
 
 .card-content {
@@ -204,7 +201,6 @@ const formatNumber = (num) => {
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.2s ease;
   text-align: center;
 }
 
@@ -215,7 +211,6 @@ const formatNumber = (num) => {
 
 .focus-btn:hover {
   background: linear-gradient(135deg, #218838, #1da896);
-  transform: translateY(-1px);
 }
 
 .highlight-btn {
@@ -225,7 +220,6 @@ const formatNumber = (num) => {
 
 .highlight-btn:hover {
   background: linear-gradient(135deg, #e0a800, #e8590c);
-  transform: translateY(-1px);
 }
 
 .card-footer {
@@ -240,9 +234,7 @@ const formatNumber = (num) => {
   font-style: italic;
 }
 
-.model-info-card {
-  animation: slideIn 0.3s ease-out;
-}
+
 
 /* 响应式设计 */
 @media (max-width: 480px) {

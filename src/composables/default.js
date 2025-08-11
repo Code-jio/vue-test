@@ -11,6 +11,7 @@ let buildingControlPlugin = null;
 let css3dPlugin = null;
 let floorManager = null;
 let waterMakerPlugin = null;
+let cloudMarkerPlugin = null;
 
 const useEngine = () => {
     try {
@@ -31,7 +32,7 @@ const engineInitialize = async () => {
                     floorConfig: {
                         enabled: true,
                         type: 'water',
-                        size: 250,
+                        size: 10,
                         position: [0, 0, 0],
                         waterConfig: {
                             textureWidth: 512,
@@ -165,6 +166,13 @@ const engineInitialize = async () => {
         userData: {
             scenePlugin: baseScene,
         },
+    }).register({
+        name: "CloudMarkerPlugin",
+        path: "/plugins/webgl/cloudMarkerPlugin",
+        pluginClass: EngineKernel.CloudMarkerPlugin,
+        userData: {
+            scenePlugin: baseScene,
+        },
     });
 
     // 启动渲染循环
@@ -181,6 +189,7 @@ const engineInitialize = async () => {
 
     // 获取楼层管理器实例
     floorManager = baseScene.floorManager;
+    cloudMarkerPlugin = engine.getPlugin("CloudMarkerPlugin");
     
     // 暴露水面控制方法到全局（方便调试）
     if (typeof window !== 'undefined') {
@@ -406,6 +415,107 @@ const createPathDemo = async (modelUrl = '/MAN.gltf') => {
         throw error;
     }
 };
+
+// 创建体积云标注 - 优化版
+const createCloudMarker = (options = {}) => {
+    if (!cloudMarkerPlugin) {
+        console.error("❌ CloudMarkerPlugin not found");
+        return null;
+    }
+
+    try {
+        // 优化后的默认配置
+        const config = {
+            height: 15,
+            contour: [
+                new EngineKernel.THREE.Vector3(-10, 0, -10),
+                new EngineKernel.THREE.Vector3(10, 0, -10),
+                new EngineKernel.THREE.Vector3(10, 0, 10),
+                new EngineKernel.THREE.Vector3(-10, 0, 10)
+            ],
+            color: 0x87CEEB,
+            opacity: 0.7,
+            ...options
+        };
+
+        // 创建云标注
+        const cloudMarker = cloudMarkerPlugin.createCloudMarker(config);
+        console.log('☁️ 体积云标注创建成功:', cloudMarker);
+        
+        if (cloudMarker && cloudMarker.getGroup) {
+            cloudMarker.getGroup().name = "cloudMarker";
+        }
+
+        return cloudMarker;
+    } catch (error) {
+        console.error('❌ 创建体积云标注失败:', error);
+        return null;
+    }
+}
+
+// 云标注管理器
+const cloudManager = {
+    clouds: [],
+    
+    add: (cloud) => {
+        if (cloud) {
+            cloudManager.clouds.push(cloud);
+            return cloud;
+        }
+        return null;
+    },
+    
+    remove: (cloud) => {
+        const index = cloudManager.clouds.indexOf(cloud);
+        if (index > -1) {
+            if (cloud.dispose) cloud.dispose();
+            cloudManager.clouds.splice(index, 1);
+            return true;
+        }
+        return false;
+    },
+    
+    clear: () => {
+        cloudManager.clouds.forEach(cloud => {
+            if (cloud.dispose) cloud.dispose();
+        });
+        cloudManager.clouds = [];
+    },
+    
+    setVisible: (visible) => {
+        cloudManager.clouds.forEach(cloud => {
+            if (cloud.setVisible) cloud.setVisible(visible);
+        });
+    },
+    
+    setOpacity: (opacity) => {
+        cloudManager.clouds.forEach(cloud => {
+            if (cloud.setOpacity) cloud.setOpacity(opacity);
+        });
+    },
+    
+    getCount: () => cloudManager.clouds.length
+};
+
+// 暴露到全局的控制方法
+if (typeof window !== 'undefined') {
+    window.cloudControls = {
+        cloudManager,
+        
+        // 高级控制参数
+        setCloudParameters: (params) => {
+            cloudManager.clouds.forEach(cloud => {
+                if (params.density !== undefined && cloud.setDensity) cloud.setDensity(params.density);
+                if (params.steps !== undefined && cloud.setSteps) cloud.setSteps(params.steps);
+                if (params.color !== undefined && cloud.setColor) cloud.setColor(params.color);
+                if (params.opacity !== undefined && cloud.setOpacity) cloud.setOpacity(params.opacity);
+                if (params.height !== undefined && cloud.setHeight) cloud.setHeight(params.height);
+                if (params.position && cloud.setPosition) cloud.setPosition(params.position);
+            });
+        },
+        getCloudCount: () => cloudManager.clouds.length
+    };
+}
 
 const createFireMarker = (options = {}) => {
     // 合并默认配置 - 使用优化后的配置
@@ -664,6 +774,58 @@ const createWaterMarker = (options = {}) => {
     }
 }
 
+let smokeManager, smokeControls
+
+const createSmoke = () => {
+    smokeManager = new window.EngineKernel.SmokeEffectManager(baseScene.scene);
+    console.log(smokeManager,"smokeManager")
+    // 创建基础烟雾效果
+    const mainSmoke = smokeManager.createSmokeEffect({
+        maxParticles: 3000,
+        particleSize: 3.0,
+        emissionRate: 200,
+        lifetime: 20.0,
+        position: new EngineKernel.THREE.Vector3(0, 50, 0),
+        spread: new EngineKernel.THREE.Vector3(30, 5, 30),
+        colorStart: new EngineKernel.THREE.Color(0x666666),
+        colorEnd: new EngineKernel.THREE.Color(0x222222),
+        turbulence: 0.4,
+        windForce: new EngineKernel.THREE.Vector3(0.3, 1.2, 0.1)
+    });
+    
+    // 添加烟雾控制
+    smokeControls = {
+        mainEmissionRate: 100,
+        windX: 0.3,
+        windY: 1.2,
+        windZ: 0.1,
+        turbulence: 0.4
+    };
+    
+    // 将控制器暴露给全局，便于调试
+    window.smokeControls = smokeControls;
+    window.smokeManager = smokeManager;
+
+    return mainSmoke
+}
+
+
+// 添加烟雾控制更新
+const updateSmokeControls = (mainSmoke) => {
+    mainSmoke.setEmissionRate(smokeControls.mainEmissionRate);
+    
+    const windForce = new EngineKernel.THREE.Vector3(
+        smokeControls.windX,
+        smokeControls.windY,
+        smokeControls.windZ
+    );
+    
+    mainSmoke.options.windForce = windForce;
+    
+    mainSmoke.options.turbulence = smokeControls.turbulence;
+};
+
+
 
 export {
     useEngine,
@@ -673,7 +835,11 @@ export {
     createPathDemo,
     createFireMarker,
     createWaterMarker,
+    createCloudMarker,
+    createSmoke,
+    updateSmokeControls,
 
+    smokeControls,
     baseScene,
     engine,
     renderLoop,

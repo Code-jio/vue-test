@@ -10,6 +10,7 @@ import AsyncLoadingTestView from '@/views/AsyncLoadingTestView.vue'
 // import CSS3DAdvancedView from '@/views/CSS3DAdvanced.vue'
 import DefaultViews from '@/views/DefaultViews.vue'
 import TestGraph from '@/views/testGraph.vue'
+import ParticleTest from '@/views/ParticleTest.vue'
 
 
 const router = createRouter({
@@ -102,6 +103,14 @@ const router = createRouter({
       component: TestGraph,
       meta: {
         title: '3D关系图'
+      }
+    },
+    {
+      path: '/particle-test',
+      name: 'particle-test',
+      component: ParticleTest,
+      meta: {
+        title: '粒子发射器测试'
       }
     }
   ]
