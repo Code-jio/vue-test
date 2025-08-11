@@ -89,17 +89,17 @@ const engineInitialize = async () => {
             scene: baseScene.scene,
             resourceReaderPlugin: resourceReaderPlugin,
         },
-    }).register({
-        name: "SkyBoxPlugin",
-        path: "/plugins/webgl/SkyBox",
-        pluginClass: EngineKernel.SkyBox,
-        userData: {
-            scene: baseScene.scene,
-            camera: baseScene.camera,
-            renderer: baseScene.renderer,
-            skyBoxType: EngineKernel.SkyBoxType.HDR_ENVIRONMENT,
-            hdrMapPath: './skybox/rustig_koppie_puresky_2k.hdr',
-        },
+    // }).register({
+    //     name: "SkyBoxPlugin",
+    //     path: "/plugins/webgl/SkyBox",
+    //     pluginClass: EngineKernel.SkyBox,
+    //     userData: {
+    //         scene: baseScene.scene,
+    //         camera: baseScene.camera,
+    //         renderer: baseScene.renderer,
+    //         skyBoxType: EngineKernel.SkyBoxType.HDR_ENVIRONMENT,
+    //         hdrMapPath: './skybox/rustig_koppie_puresky_2k.hdr',
+    //     },
     }).register({
         name: "CSS3DRenderPlugin",
         path: "/plugins/webgl/css3DRender",
@@ -278,7 +278,6 @@ const loadBatchModels = async (modelFiles) => {
     console.log(`批量加载完成！成功加载 ${loadedModels.length}/${modelFiles.length} 个模型`);
     return loadedModels;
 }
-
 
 // 添加模型：\public\MAN.gltf 作为3Dmodelmarker，然后执行moveByPath方法，使用modelMarkerPlugin的内置方法
 const loadModel = async (url = '/MAN.gltf', options = {}) => {
@@ -776,56 +775,336 @@ const createWaterMarker = (options = {}) => {
 
 let smokeManager, smokeControls
 
-const createSmoke = () => {
-    smokeManager = new window.EngineKernel.SmokeEffectManager(baseScene.scene);
-    console.log(smokeManager,"smokeManager")
-    // 创建基础烟雾效果
-    const mainSmoke = smokeManager.createSmokeEffect({
-        maxParticles: 3000,
-        particleSize: 3.0,
-        emissionRate: 200,
-        lifetime: 20.0,
-        position: new EngineKernel.THREE.Vector3(0, 50, 0),
-        spread: new EngineKernel.THREE.Vector3(30, 5, 30),
-        colorStart: new EngineKernel.THREE.Color(0x666666),
-        colorEnd: new EngineKernel.THREE.Color(0x222222),
-        turbulence: 0.4,
-        windForce: new EngineKernel.THREE.Vector3(0.3, 1.2, 0.1)
-    });
-    
-    // 添加烟雾控制
-    smokeControls = {
-        mainEmissionRate: 100,
-        windX: 0.3,
-        windY: 1.2,
-        windZ: 0.1,
-        turbulence: 0.4
-    };
-    
-    // 将控制器暴露给全局，便于调试
-    window.smokeControls = smokeControls;
-    window.smokeManager = smokeManager;
+/**
+ * 创建烟雾效果
+ * @param {Object} options - 烟雾配置选项
+ * @param {Object} options.position - 烟雾位置 {x, y, z}
+ * @param {number} options.maxParticles - 最大粒子数量 (默认: 100)
+ * @param {number} options.emissionRate - 发射速率 (默认: 10)
+ * @param {number} options.particleSize - 粒子大小 (默认: 2.0)
+ * @param {number} options.lifetime - 粒子生命周期 (默认: 5.0)
+ * @param {Array} options.colorStart - 起始颜色 [r, g, b] (默认: [0.5, 0.5, 0.5])
+ * @param {Array} options.colorEnd - 结束颜色 [r, g, b] (默认: [0.2, 0.2, 0.2])
+ * @param {Object} options.spread - 扩散范围 {x, y, z} (默认: {x: 5, y: 2, z: 5})
+ * @param {string} options.id - 烟雾效果ID (默认: 'smoke_' + 时间戳)
+ * @param {Function} options.onCreated - 创建成功回调
+ * @param {Function} options.onError - 创建失败回调
+ * @returns {Object} 烟雾控制器对象
+ */
+const createSmoke = (options = {}) => {
+    try {
+        // 检查场景
+        if (!baseScene.scene) {
+            throw new Error('场景未初始化');
+        }
 
-    return mainSmoke
+        // 初始化烟雾管理器（如果尚未初始化）
+        if (!smokeManager) {
+            smokeManager = new EngineKernel.SmokeEffectManager(baseScene.scene);
+            console.log('🌫️ 烟雾管理器已初始化');
+        }
+
+        // 生成唯一ID
+        const id = options.id || `smoke_${Date.now()}`;
+
+        // 转换颜色格式
+        const colorStart = options.colorStart ? new EngineKernel.THREE.Color(...options.colorStart) : new EngineKernel.THREE.Color(0x888888);
+        const colorEnd = options.colorEnd ? new EngineKernel.THREE.Color(...options.colorEnd) : new EngineKernel.THREE.Color(0x333333);
+
+        // 转换位置格式
+        const position = options.position ? 
+            new EngineKernel.THREE.Vector3(options.position.x || 0, options.position.y || 0, options.position.z || 0) :
+            new EngineKernel.THREE.Vector3(0, 0, 0);
+
+        // 转换扩散范围格式
+        const spread = new EngineKernel.THREE.Vector3(
+            options.spread?.x || 5,
+            options.spread?.y || 2,
+            options.spread?.z || 5
+        );
+
+        // 创建烟雾配置
+        const smokeConfig = {
+            maxParticles: options.maxParticles || 100,
+            emissionRate: options.emissionRate || 10,
+            particleSize: options.particleSize || 2.0,
+            lifetime: options.lifetime || 5.0,
+            colorStart: colorStart,
+            colorEnd: colorEnd,
+            position: position,
+            spread: spread,
+            windForce: new EngineKernel.THREE.Vector3(0.2, 0.5, 0.05),
+            turbulence: 0.3,
+            texturePath: './textures/smoke1.png'
+        };
+
+        // 创建烟雾效果
+        const smokeEffect = smokeManager.createSmokeEffect(id, smokeConfig);
+
+        console.log('🌫️ 烟雾效果创建成功', {
+            id: id,
+            position: position,
+            maxParticles: smokeConfig.maxParticles,
+            emissionRate: smokeConfig.emissionRate
+        });
+
+        // 执行创建成功回调
+        if (typeof options.onCreated === 'function') {
+            options.onCreated(smokeEffect, id);
+        }
+
+        // 返回烟雾控制器
+        return {
+            id: id,
+            effect: smokeEffect,
+            manager: smokeManager,
+            
+            // 控制方法
+            setPosition: (position) => {
+                if (smokeEffect) {
+                    smokeEffect.setPosition(new EngineKernel.THREE.Vector3(position.x, position.y, position.z));
+                }
+            },
+            
+            setEmissionRate: (rate) => {
+                if (smokeEffect) {
+                    smokeEffect.setEmissionRate(rate);
+                }
+            },
+            
+            setIntensity: (intensity) => {
+                if (smokeEffect) {
+                    smokeEffect.setEmissionRate(intensity * 20);
+                }
+            },
+            
+            setColor: (colorStart, colorEnd) => {
+                if (smokeEffect) {
+                    smokeEffect.options.colorStart.set(colorStart);
+                    smokeEffect.options.colorEnd.set(colorEnd);
+                }
+            },
+            
+            remove: () => {
+                if (smokeManager) {
+                    smokeManager.removeEffect(id);
+                    console.log(`🌫️ 烟雾效果 ${id} 已移除`);
+                }
+            },
+            
+            getStats: () => {
+                if (smokeEffect) {
+                    return {
+                        activeParticles: smokeEffect.getActiveParticleCount(),
+                        utilization: smokeEffect.getPoolUtilization(),
+                        maxParticles: smokeEffect.options.maxParticles
+                    };
+                }
+                return null;
+            }
+        };
+
+    } catch (error) {
+        console.error('❌ 创建烟雾效果失败:', error.message);
+        
+        // 执行错误回调
+        if (typeof options.onError === 'function') {
+            options.onError(error);
+        }
+        
+        throw error;
+    }
 }
 
+/**
+ * 烟雾控制更新方法
+ * 需要在渲染循环中调用
+ * @param {number} deltaTime - 时间增量（秒）
+ */
+const updateSmokeControls = (deltaTime = 0.016) => {
+    if (!smokeManager) {
+        return;
+    }
 
-// 添加烟雾控制更新
-const updateSmokeControls = (mainSmoke) => {
-    mainSmoke.setEmissionRate(smokeControls.mainEmissionRate);
+    try {
+        // 更新所有烟雾效果
+        smokeManager.update(deltaTime);
+    } catch (error) {
+        console.error('❌ 更新烟雾控制失败:', error.message);
+    }
+};
+
+/**
+ * 烟雾预设配置
+ */
+const smokePresets = {
+    // 工厂烟囱烟雾
+    factory: {
+        maxParticles: 200,
+        emissionRate: 15,
+        particleSize: 3.0,
+        lifetime: 8.0,
+        colorStart: [0.4, 0.4, 0.4],
+        colorEnd: [0.1, 0.1, 0.1],
+        spread: { x: 3, y: 1, z: 3 }
+    },
     
-    const windForce = new EngineKernel.THREE.Vector3(
-        smokeControls.windX,
-        smokeControls.windY,
-        smokeControls.windZ
-    );
+    // 篝火烟雾
+    campfire: {
+        maxParticles: 150,
+        emissionRate: 12,
+        particleSize: 1.5,
+        lifetime: 4.0,
+        colorStart: [0.6, 0.5, 0.4],
+        colorEnd: [0.2, 0.2, 0.2],
+        spread: { x: 2, y: 1, z: 2 }
+    },
     
-    mainSmoke.options.windForce = windForce;
+    // 蒸汽烟雾
+    steam: {
+        maxParticles: 80,
+        emissionRate: 8,
+        particleSize: 1.0,
+        lifetime: 3.0,
+        colorStart: [0.9, 0.9, 0.9],
+        colorEnd: [0.7, 0.7, 0.7],
+        spread: { x: 1, y: 0.5, z: 1 }
+    },
     
-    mainSmoke.options.turbulence = smokeControls.turbulence;
+    // 爆炸烟雾
+    explosion: {
+        maxParticles: 300,
+        emissionRate: 50,
+        particleSize: 4.0,
+        lifetime: 10.0,
+        colorStart: [0.3, 0.3, 0.3],
+        colorEnd: [0.05, 0.05, 0.05],
+        spread: { x: 8, y: 4, z: 8 }
+    }
+};
+
+/**
+ * 使用预设创建烟雾效果
+ * @param {string} presetName - 预设名称
+ * @param {Object} position - 位置 {x, y, z}
+ * @param {Object} options - 额外选项
+ * @returns {Object} 烟雾控制器
+ */
+const createSmokeWithPreset = (presetName, position, options = {}) => {
+    const preset = smokePresets[presetName];
+    if (!preset) {
+        console.error(`❌ 未知的烟雾预设: ${presetName}`);
+        return null;
+    }
+    
+    return createSmoke({
+        ...preset,
+        position: position,
+        ...options
+    });
 };
 
 
+
+// 初始化烟雾管理器
+const initSmokeManager = () => {
+    if (!smokeManager) {
+        smokeManager = new EngineKernel.SmokeEffectManager(engine.scene);
+        console.log('🌫️ 烟雾管理器已初始化');
+    }
+}
+
+/**
+ * 烟雾效果使用示例
+ */
+const smokeExamples = {
+    // 创建工厂烟囱烟雾
+    createFactorySmoke: () => {
+        return createSmokeWithPreset('factory', { x: 0, y: 10, z: 0 });
+    },
+    
+    // 创建篝火烟雾
+    createCampfireSmoke: () => {
+        return createSmokeWithPreset('campfire', { x: 5, y: 1, z: 0 });
+    },
+    
+    // 创建蒸汽烟雾
+    createSteamSmoke: () => {
+        return createSmokeWithPreset('steam', { x: -5, y: 2, z: 0 });
+    },
+    
+    // 创建爆炸烟雾
+    createExplosionSmoke: (position) => {
+        return createSmokeWithPreset('explosion', position || { x: 0, y: 5, z: 0 });
+    },
+    
+    // 创建自定义烟雾
+    createCustomSmoke: () => {
+        return createSmoke({
+            position: { x: 10, y: 5, z: 0 },
+            maxParticles: 120,
+            emissionRate: 8,
+            particleSize: 2.5,
+            lifetime: 6.0,
+            colorStart: [0.7, 0.6, 0.5],
+            colorEnd: [0.3, 0.3, 0.3],
+            spread: { x: 4, y: 2, z: 4 }
+        });
+    }
+};
+
+/**
+ * 烟雾控制面板数据
+ */
+const smokeControlData = {
+    activeSmokes: {},
+    globalIntensity: 1.0,
+    windForce: { x: 0.2, y: 0.5, z: 0.05 },
+    
+    // 添加烟雾到控制面板
+    addSmoke: (id, controller) => {
+        smokeControlData.activeSmokes[id] = controller;
+        console.log(`🌫️ 烟雾 ${id} 已添加到控制面板`);
+    },
+    
+    // 从控制面板移除烟雾
+    removeSmoke: (id) => {
+        if (smokeControlData.activeSmokes[id]) {
+            delete smokeControlData.activeSmokes[id];
+            console.log(`🌫️ 烟雾 ${id} 已从控制面板移除`);
+        }
+    },
+    
+    // 设置全局强度
+    setGlobalIntensity: (intensity) => {
+        smokeControlData.globalIntensity = Math.max(0, Math.min(2, intensity));
+        Object.values(smokeControlData.activeSmokes).forEach(controller => {
+            controller.setIntensity(smokeControlData.globalIntensity);
+        });
+    },
+    
+    // 设置全局风向
+    setWindForce: (windForce) => {
+        smokeControlData.windForce = windForce;
+        // 应用到所有烟雾效果
+        Object.values(smokeControlData.activeSmokes).forEach(controller => {
+            if (controller.effect && controller.effect.setWindForce) {
+                controller.effect.setWindForce(new EngineKernel.THREE.Vector3(windForce.x, windForce.y, windForce.z));
+            }
+        });
+    }
+};
+
+/**
+ * 渲染循环中的烟雾更新
+ * 需要在主渲染循环中调用
+ */
+const updateSmokeInRenderLoop = () => {
+    if (engine && engine.clock) {
+        const deltaTime = engine.clock.getDelta();
+        updateSmokeControls(deltaTime);
+    }
+};
 
 export {
     useEngine,
@@ -838,6 +1117,11 @@ export {
     createCloudMarker,
     createSmoke,
     updateSmokeControls,
+    initSmokeManager,
+    updateSmokeInRenderLoop,
+    
+    smokeExamples,
+    smokeControlData,
 
     smokeControls,
     baseScene,

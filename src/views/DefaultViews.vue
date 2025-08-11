@@ -2,18 +2,48 @@
     <div class="engine-scene-container">
         <div id="css3d-container" class="css3d-container"></div>
 
-        <!-- 云标注控制面板 -->
-        <div class="cloud-control-panel">
-            <h3 class="panel-title">云标注控制</h3>
-            <div class="control-buttons">
-                <button class="control-btn" @click="createDemoClouds" :disabled="isOperating"
-                    style="background: linear-gradient(135deg, #FF9800, #F57C00); color: white;">
-                    创建演示云
-                </button>
-                <button class="control-btn" @click="clearAllClouds" :disabled="isOperating"
-                    style="background: linear-gradient(135deg, #F44336, #D32F2F); color: white;">
-                    清除所有云
-                </button>
+        <!-- 烟雾调试面板 -->
+        <SmokeDebugPanel />
+
+        <!-- 烟雾控制面板 -->
+        <div class="smoke-control-panel">
+            <h3 class="panel-title">🌫️ 烟雾特效控制</h3>
+            <div class="control-section">
+                <h4>预设烟雾</h4>
+                <div class="control-buttons">
+                    <button class="control-btn" @click="createSmokeEffects" 
+                            style="background: linear-gradient(135deg, #4CAF50, #45a049); color: white;">
+                        创建所有烟雾
+                    </button>
+                    <button class="control-btn" @click="clearAllSmokes"
+                            style="background: linear-gradient(135deg, #F44336, #D32F2F); color: white;">
+                        清除所有烟雾
+                    </button>
+                </div>
+            </div>
+
+            <div class="control-section">
+                <h4>动态烟雾</h4>
+                <div class="control-buttons">
+                    <button class="control-btn" @click="createExplosionAtCenter"
+                            style="background: linear-gradient(135deg, #FF9800, #F57C00); color: white;">
+                        💥 爆炸烟雾
+                    </button>
+                    <button class="control-btn" @click="createSteamAtRandom"
+                            style="background: linear-gradient(135deg, #2196F3, #1976D2); color: white;">
+                        💨 蒸汽烟雾
+                    </button>
+                </div>
+            </div>
+
+            <div v-if="activeSmokes.length > 0" class="smoke-list">
+                <h4>活跃烟雾 ({{ activeSmokes.length }})</h4>
+                <div v-for="smoke in activeSmokes" :key="smoke.id" class="smoke-item">
+                    <span class="smoke-type">{{ smoke.type }}</span>
+                    <span class="smoke-id">{{ smoke.id.substring(0, 8) }}...</span>
+                    <button class="mini-btn" @click="toggleSmoke(smoke.id)">开关</button>
+                    <button class="mini-btn remove" @click="removeSmoke(smoke.id)">移除</button>
+                </div>
             </div>
 
             <div v-if="operationStatus" class="status-message" :class="operationStatus.type">
@@ -28,6 +58,8 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick } from "vue";
+// import { createDebugSmoke, testSmoke } from '@/composables/debug-smoke-simple.js'
+
 import {
     useEngine,
     engineInitialize,
@@ -37,11 +69,10 @@ import {
     createFireMarker,
     createWaterMarker,
     createCloudMarker,
-
     createSmoke,
+    smokeExamples,
     updateSmokeControls,
-
-    smokeControls,
+    initSmokeManager,
 
     baseScene,
     engine,
@@ -50,6 +81,7 @@ import {
     mousePickPlugin,
     buildingControlPlugin,
 } from "@/composables/default";
+import SmokeDebugPanel from '@/components/SmokeDebugPanel.vue';
 import eventBus from "@/eventBus";
 import ModelMessage from "@/components/modelMessage.vue";
 
@@ -61,10 +93,26 @@ const modelMessageRef = ref(null); // ModelMessage组件引用
 const isOperating = ref(false); // 是否正在执行操作
 const operationStatus = ref(null); // 操作状态信息
 
+// 烟雾效果相关
 let mainSmoke;
+let factorySmoke;
+let campfireSmoke;
+let steamSmoke;
+const activeSmokes = ref([]);
 
 onMounted(async () => {
     await useEngine();
+    
+    // 🌫️ 初始化烟雾管理器并创建烟雾效果
+    console.log('🌫️ 正在初始化烟雾效果...');
+    initSmokeManager();
+    createSmokeEffects();
+    
+    // 注册烟雾更新循环
+    EngineKernel.eventBus.on("update", updateSmokeControls);
+    console.log("✅ 烟雾效果初始化完成");
+    
+    // 继续加载模型和其他资源
     await loadModelsFromConfig();
     await buildingControlPlugin.init(baseScene);
 
@@ -86,7 +134,6 @@ onMounted(async () => {
     // });
     // console.log('🔥 火焰效果:', fire);
     // fire.addToScene(baseScene.scene, baseScene.camera); // 传递相机参数以支持Billboard效果
-
 
     // // 指定轮廓的水体生成 - 创建演示异形水体
     // createWaterMarker({
@@ -114,28 +161,6 @@ onMounted(async () => {
 
     // 方法2：使用测试函数
     // testPathLineRendering()
-
-
-    mainSmoke = createSmoke()
-
-    EngineKernel.eventBus.on("update",()=>{
-        updateSmokeControls(mainSmoke)
-
-        // // 更新相机位置到着色器
-        // if (mainSmoke && mainSmoke.material && mainSmoke.material.uniforms) {
-        //     mainSmoke.material.uniforms.cameraPos.value.copy(camera.position);
-        // }
-
-        // // 更新所有粒子系统
-        // if (window.effects && window.effects.length > 0) {
-        //     window.effects.forEach(effect => {
-        //         if (effect.type === 'smoke' && effect.update) {
-        //             effect.update(deltaTime);
-        //         }
-        //     });
-        // }
-    })
-    console.log("EngineKernel.event", smokeControls)
 })
 // console.log(EngineKernel)
 EngineKernel.eventBus.on('mouse-pick:object-picked', (object) => {
@@ -244,8 +269,126 @@ const showModelInfo = async () => {
     console.log('👁️ 显示模型信息', currentCSS3DObject.value);
 }
 
+// 创建烟雾效果
+const createSmokeEffects = () => {
+    try {
+        // 创建工厂烟囱烟雾
+        factorySmoke = smokeExamples.createFactorySmoke({
+            id: 'factory-smoke-1',
+            onCreated: (effect) => {
+                console.log('🏭 工厂烟囱烟雾创建成功');
+                activeSmokes.value.push({
+                    id: 'factory-smoke-1',
+                    type: 'factory',
+                    controller: factorySmoke
+                });
+            }
+        });
+
+        // 创建篝火烟雾
+        campfireSmoke = smokeExamples.createCampfireSmoke({
+            id: 'campfire-smoke-1',
+            onCreated: (effect) => {
+                console.log('🔥 篝火烟雾创建成功');
+                activeSmokes.value.push({
+                    id: 'campfire-smoke-1',
+                    type: 'campfire',
+                    controller: campfireSmoke
+                });
+            }
+        });
+
+        // 创建蒸汽烟雾
+        steamSmoke = smokeExamples.createSteamSmoke({
+            id: 'steam-smoke-1',
+            onCreated: (effect) => {
+                console.log('💨 蒸汽烟雾创建成功');
+                activeSmokes.value.push({
+                    id: 'steam-smoke-1',
+                    type: 'steam',
+                    controller: steamSmoke
+                });
+            }
+        });
+
+        // 创建自定义烟雾
+        mainSmoke = smokeExamples.createCustomSmoke({
+            id: 'main-smoke-1',
+            onCreated: (effect) => {
+                console.log('🌫️ 主烟雾效果创建成功');
+                activeSmokes.value.push({
+                    id: 'main-smoke-1',
+                    type: 'custom',
+                    controller: mainSmoke
+                });
+            }
+        });
+
+    } catch (error) {
+        console.error('❌ 创建烟雾效果失败:', error);
+    }
+};
+
+// 烟雾控制方法
+const toggleSmoke = (smokeId) => {
+    const smoke = activeSmokes.value.find(s => s.id === smokeId);
+    if (smoke && smoke.controller) {
+        const isActive = smoke.controller.getStats()?.activeParticles > 0;
+        if (isActive) {
+            smoke.controller.setIntensity(0);
+        } else {
+            smoke.controller.setIntensity(1);
+        }
+    }
+};
+
+const removeSmoke = (smokeId) => {
+    const index = activeSmokes.value.findIndex(s => s.id === smokeId);
+    if (index !== -1) {
+        activeSmokes.value[index].controller.remove();
+        activeSmokes.value.splice(index, 1);
+        console.log(`🗑️ 烟雾 ${smokeId} 已移除`);
+    }
+};
+
+const createSmokeAtPosition = (position, type = 'custom') => {
+    const smokeId = `dynamic-${type}-${Date.now()}`;
+    
+    if (type === 'explosion') {
+        return smokeExamples.createExplosionSmoke(position);
+    } else {
+        return createSmoke({
+            position: position,
+            maxParticles: 100,
+            emissionRate: 8,
+            particleSize: 2.0,
+            lifetime: 5.0,
+            id: smokeId,
+            onCreated: (effect) => {
+                console.log('🌫️ 动态烟雾创建成功');
+                activeSmokes.value.push({
+                    id: smokeId,
+                    type: 'dynamic',
+                    controller: effect
+                });
+            }
+        });
+    }
+};
+
 // 组件卸载时清理资源
 onUnmounted(async () => {
+    // 清理所有烟雾效果
+    activeSmokes.value.forEach(smoke => {
+        if (smoke.controller) {
+            smoke.controller.remove();
+        }
+    });
+    activeSmokes.value = [];
+    
+    // 移除事件监听器
+    EngineKernel.eventBus.off("update", updateSmokeControls);
+    
     await hideModelInfo();
 });
 
@@ -394,6 +537,46 @@ const clearAllClouds = async () => {
     }
 };
 
+// 烟雾相关方法
+const clearAllSmokes = () => {
+    try {
+        activeSmokes.value.forEach(smoke => {
+            if (smoke.controller && smoke.controller.removeFromScene) {
+                smoke.controller.removeFromScene();
+            }
+        });
+        activeSmokes.value = [];
+        showOperationStatus('success', '所有烟雾已清除');
+    } catch (error) {
+        console.error('清除烟雾失败:', error);
+        showOperationStatus('error', '清除烟雾失败: ' + error.message);
+    }
+};
+
+const createExplosionAtCenter = () => {
+    try {
+        const position = { x: 0, y: 5, z: 0 };
+        const controller = createSmokeAtPosition(position, 'explosion');
+        showOperationStatus('success', '爆炸烟雾已创建');
+    } catch (error) {
+        console.error('创建爆炸烟雾失败:', error);
+        showOperationStatus('error', '创建爆炸烟雾失败: ' + error.message);
+    }
+};
+
+const createSteamAtRandom = () => {
+    try {
+        const randomX = (Math.random() - 0.5) * 20;
+        const randomZ = (Math.random() - 0.5) * 20;
+        const position = { x: randomX, y: 0, z: randomZ };
+        const controller = createSmokeAtPosition(position, 'steam');
+        showOperationStatus('success', '蒸汽烟雾已创建');
+    } catch (error) {
+        console.error('创建蒸汽烟雾失败:', error);
+        showOperationStatus('error', '创建蒸汽烟雾失败: ' + error.message);
+    }
+};
+
 // 将测试函数暴露到全局，方便调试
 if (typeof window !== 'undefined') {
     window.testCSS3D = testCSS3D;
@@ -494,6 +677,149 @@ const loadModelsFromConfig = async () => {
     transform-style: preserve-3d;
 }
 
+/* 烟雾控制面板样式 */
+.smoke-control-panel {
+    position: absolute;
+    top: 10px;
+    left: 10px;
+    z-index: 1000;
+    background: rgba(0, 0, 0, 0.85);
+    padding: 15px;
+    border-radius: 8px;
+    color: white;
+    font-family: Arial, sans-serif;
+    max-width: 320px;
+    backdrop-filter: blur(10px);
+}
+
+.panel-title {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+}
+
+.control-section {
+    margin-bottom: 15px;
+}
+
+.control-section h4 {
+    margin: 0 0 8px 0;
+    font-size: 12px;
+    color: #ccc;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.control-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.control-btn {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 12px;
+    transition: all 0.3s ease;
+}
+
+.control-btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.control-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.smoke-list {
+    margin-top: 15px;
+    padding: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.smoke-list h4 {
+    margin: 0 0 8px 0;
+    font-size: 12px;
+    color: #fff;
+}
+
+.smoke-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 5px;
+    padding: 5px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+    font-size: 11px;
+}
+
+.smoke-type {
+    flex: 1;
+    font-weight: bold;
+    color: #4CAF50;
+}
+
+.smoke-id {
+    color: #888;
+    font-size: 10px;
+}
+
+.mini-btn {
+    padding: 2px 6px;
+    font-size: 10px;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    background: rgba(33, 150, 243, 0.7);
+    color: white;
+    transition: background 0.2s;
+}
+
+.mini-btn:hover {
+    background: rgba(33, 150, 243, 1);
+}
+
+.mini-btn.remove {
+    background: rgba(244, 67, 54, 0.7);
+}
+
+.mini-btn.remove:hover {
+    background: rgba(244, 67, 54, 1);
+}
+
+.status-message {
+    margin-top: 10px;
+    padding: 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    text-align: center;
+}
+
+.status-message.success {
+    background: rgba(76, 175, 80, 0.2);
+    border: 1px solid rgba(76, 175, 80, 0.5);
+    color: #4CAF50;
+}
+
+.status-message.error {
+    background: rgba(244, 67, 54, 0.2);
+    border: 1px solid rgba(244, 67, 54, 0.5);
+    color: #f44336;
+}
+
+.status-message.info {
+    background: rgba(33, 150, 243, 0.2);
+    border: 1px solid rgba(33, 150, 243, 0.5);
+    color: #2196F3;
+}
+
 /* 云控制面板样式 */
 .cloud-control-panel {
     display: block;
@@ -511,7 +837,7 @@ const loadModelsFromConfig = async () => {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
 
-.panel-title {
+.cloud-control-panel .panel-title {
     margin: 0 0 16px 0;
     font-size: 18px;
     font-weight: 600;
@@ -521,13 +847,13 @@ const loadModelsFromConfig = async () => {
     padding-bottom: 8px;
 }
 
-.control-buttons {
+.cloud-control-panel .control-buttons {
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
-.control-btn {
+.cloud-control-panel .control-btn {
     padding: 12px 16px;
     border: none;
     border-radius: 8px;
@@ -539,16 +865,16 @@ const loadModelsFromConfig = async () => {
     overflow: hidden;
 }
 
-.control-btn:hover:not(:disabled) {
+.cloud-control-panel .control-btn:hover:not(:disabled) {
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
-.control-btn:disabled {
+.cloud-control-panel .control-btn:disabled {
     opacity: 0.6;
     cursor: not-allowed;
 }
 
-.status-message {
+.cloud-control-panel .status-message {
     margin-top: 12px;
     padding: 8px 12px;
     border-radius: 6px;
@@ -557,19 +883,19 @@ const loadModelsFromConfig = async () => {
     text-align: center;
 }
 
-.status-message.success {
+.cloud-control-panel .status-message.success {
     background: #E8F5E8;
     color: #2E7D32;
     border: 1px solid #C8E6C9;
 }
 
-.status-message.error {
+.cloud-control-panel .status-message.error {
     background: #FFEBEE;
     color: #C62828;
     border: 1px solid #FFCDD2;
 }
 
-.status-message.info {
+.cloud-control-panel .status-message.info {
     background: #E3F2FD;
     color: #1565C0;
     border: 1px solid #BBDEFB;
@@ -577,6 +903,7 @@ const loadModelsFromConfig = async () => {
 
 /* 响应式设计 */
 @media (max-width: 768px) {
+    .smoke-control-panel,
     .cloud-control-panel {
         top: 10px;
         right: 10px;
