@@ -85,6 +85,8 @@ import SmokeDebugPanel from '@/components/SmokeDebugPanel.vue';
 import eventBus from "@/eventBus";
 import ModelMessage from "@/components/modelMessage.vue";
 
+let THREE = EngineKernel.THREE
+
 const currentModelInfo = ref(null); // 当前显示的模型信息
 const currentCSS3DObject = ref(null); // 当前显示的CSS3D对象
 const modelMessageRef = ref(null); // ModelMessage组件引用
@@ -622,6 +624,82 @@ const loadModelsFromConfig = async () => {
 
 
 }
+
+// 高级测试：使用四元数参数
+const advancedQuaternionTest = () => {
+    if (!baseScene) {
+        console.error('场景未初始化，无法执行高级测试')
+        return
+    }
+
+    try {
+        // 创建旋转90度的四元数（绕Y轴）
+        const quaternion = new THREE.Quaternion()
+        quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 2)
+
+        const quaternionOptions = {
+            position: new THREE.Vector3(15, 5, 15),
+            quaternion: quaternion, // 直接传递THREE.Quaternion实例
+            duration: 2000,
+            onComplete: () => {
+                console.log('✅ 四元数cameraFlyTo测试完成')
+                
+                // 延迟执行组合测试
+                setTimeout(() => {
+                    combinedTest()
+                }, 1000)
+            },
+            onError: (error) => {
+                console.error('❌ 四元数测试失败:', error)
+            }
+        }
+
+        baseScene.cameraFlyTo(quaternionOptions)
+    } catch (error) {
+        console.error('执行四元数测试时出错:', error)
+    }
+}
+
+// 组合测试：同时使用位置、lookAt和四元数
+const combinedTest = () => {
+    if (!baseScene) {
+        console.error('场景未初始化，无法执行组合测试')
+        return
+    }
+
+    try {
+        // 创建45度绕Y轴的四元数
+        const quaternion = new THREE.Quaternion()
+        quaternion.setFromAxisAngle(new THREE.Vector3(0, 1, 0), Math.PI / 3)
+
+        const combinedOptions = {
+            position: new THREE.Vector3(-10, 8, -10),
+            lookAt: new THREE.Vector3(5, 2, 5),
+            quaternion: quaternion,
+            duration: 2500,
+            onUpdate: (progress) => {
+                // 添加进度信息
+                if (Math.random() < 0.1) { // 每10帧输出一次，避免过多日志
+                    console.log(`🔄 动画进度: ${(progress * 100).toFixed(1)}%`)
+                }
+            },
+            onComplete: () => {
+                console.log('✅ 组合cameraFlyTo测试完成')
+                console.log('🎉 所有测试完成！')
+            },
+            onError: (error) => {
+                console.error('❌ 组合测试失败:', error)
+            }
+        }
+
+        baseScene.cameraFlyTo(combinedOptions)
+    } catch (error) {
+        console.error('执行组合测试时出错:', error)
+    }
+}
+
+window.advancedQuaternionTest = advancedQuaternionTest
+
 
 </script>
 
