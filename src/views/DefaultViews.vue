@@ -2,55 +2,6 @@
     <div class="engine-scene-container">
         <div id="css3d-container" class="css3d-container"></div>
 
-        <!-- 烟雾调试面板 -->
-        <SmokeDebugPanel />
-
-        <!-- 烟雾控制面板 -->
-        <div class="smoke-control-panel">
-            <h3 class="panel-title">🌫️ 烟雾特效控制</h3>
-            <div class="control-section">
-                <h4>预设烟雾</h4>
-                <div class="control-buttons">
-                    <button class="control-btn" @click="createSmokeEffects" 
-                            style="background: linear-gradient(135deg, #4CAF50, #45a049); color: white;">
-                        创建所有烟雾
-                    </button>
-                    <button class="control-btn" @click="clearAllSmokes"
-                            style="background: linear-gradient(135deg, #F44336, #D32F2F); color: white;">
-                        清除所有烟雾
-                    </button>
-                </div>
-            </div>
-
-            <div class="control-section">
-                <h4>动态烟雾</h4>
-                <div class="control-buttons">
-                    <button class="control-btn" @click="createExplosionAtCenter"
-                            style="background: linear-gradient(135deg, #FF9800, #F57C00); color: white;">
-                        💥 爆炸烟雾
-                    </button>
-                    <button class="control-btn" @click="createSteamAtRandom"
-                            style="background: linear-gradient(135deg, #2196F3, #1976D2); color: white;">
-                        💨 蒸汽烟雾
-                    </button>
-                </div>
-            </div>
-
-            <div v-if="activeSmokes.length > 0" class="smoke-list">
-                <h4>活跃烟雾 ({{ activeSmokes.length }})</h4>
-                <div v-for="smoke in activeSmokes" :key="smoke.id" class="smoke-item">
-                    <span class="smoke-type">{{ smoke.type }}</span>
-                    <span class="smoke-id">{{ smoke.id.substring(0, 8) }}...</span>
-                    <button class="mini-btn" @click="toggleSmoke(smoke.id)">开关</button>
-                    <button class="mini-btn remove" @click="removeSmoke(smoke.id)">移除</button>
-                </div>
-            </div>
-
-            <div v-if="operationStatus" class="status-message" :class="operationStatus.type">
-                {{ operationStatus.message }}
-            </div>
-        </div>
-
         <ModelMessage v-show="currentModelInfo" ref="modelMessageRef" :modelInfo="currentModelInfo || {}"
             @close="hideModelInfo" />
     </div>

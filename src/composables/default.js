@@ -12,6 +12,7 @@ let css3dPlugin = null;
 let floorManager = null;
 let waterMakerPlugin = null;
 let cloudMarkerPlugin = null;
+let outlinePlugin = null;
 
 const useEngine = () => {
     try {
@@ -174,14 +175,24 @@ const engineInitialize = async () => {
                 scenePlugin: baseScene,
             },
         })
+        // .register({
+        //     name: "CloudMarkerPlugin",
+        //     path: "/plugins/webgl/cloudMarkerPlugin",
+        //     pluginClass: EngineKernel.CloudMarkerPlugin,
+        //     userData: {
+        //         scenePlugin: baseScene,
+        //     },
+        // })
         .register({
-            name: "CloudMarkerPlugin",
-            path: "/plugins/webgl/cloudMarkerPlugin",
-            pluginClass: EngineKernel.CloudMarkerPlugin,
+            name: "OutlinePlugin",
+            path: "/plugins/webgl/OutlinePlugin",
+            pluginClass: EngineKernel.OutLinePlugin,
             userData: {
-                scenePlugin: baseScene,
+                scene: baseScene.scene,
+                renderer: baseScene.renderer,
+                camera: baseScene.camera,
             },
-        });
+        })
 
     // 启动渲染循环
     renderLoop = engine.getPlugin("RenderLoopPlugin");
@@ -198,6 +209,9 @@ const engineInitialize = async () => {
     // 获取楼层管理器实例
     floorManager = baseScene.floorManager;
     cloudMarkerPlugin = engine.getPlugin("CloudMarkerPlugin");
+    outlinePlugin = engine.getPlugin("OutlinePlugin");
+
+    console.log(outlinePlugin,"outlinePlugin")
 
     // 暴露水面控制方法到全局（方便调试）
     if (typeof window !== "undefined") {
@@ -873,11 +887,11 @@ const createSmoke = (options = {}) => {
             spread: spread,
             windForce: new EngineKernel.THREE.Vector3(0.2, 0.5, 0.05),
             turbulence: 0.3,
-            texturePath: "./textures/smoke1.png",
+            url: options.url || "./textures/smoke1.png", 
         };
 
         // 创建烟雾效果
-        const smokeEffect = smokeManager.createSmokeEffect(id, smokeConfig);
+        const smokeEffect = smokeManager.createSmokeEffect(smokeConfig);
 
         console.log("🌫️ 烟雾效果创建成功", {
             id: id,
@@ -1040,13 +1054,14 @@ const createSmokeWithPreset = (presetName, position, options = {}) => {
         ...preset,
         position: position,
         ...options,
+        url: options.url || "./textures/smoke1.png",
     });
 };
 
 // 初始化烟雾管理器
 const initSmokeManager = () => {
     if (!smokeManager) {
-        smokeManager = new EngineKernel.SmokeEffectManager(engine.scene);
+        smokeManager = new EngineKernel.SmokeEffectManager(baseScene.scene);
         console.log("🌫️ 烟雾管理器已初始化");
     }
 };
