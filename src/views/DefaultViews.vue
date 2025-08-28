@@ -31,6 +31,7 @@ import {
     resourceReaderPlugin,
     mousePickPlugin,
     buildingControlPlugin,
+    outlinePlugin
 } from "@/composables/default";
 import SmokeDebugPanel from '@/components/SmokeDebugPanel.vue';
 import eventBus from "@/eventBus";
@@ -115,42 +116,45 @@ onMounted(async () => {
     // 方法2：使用测试函数
     // testPathLineRendering()
 })
+
 // console.log(EngineKernel)
 EngineKernel.eventBus.on('mouse-pick:object-picked', (object) => {
-    // console.log('选中对象:', object);
-    // 获取点击位置的3D坐标
-    if (object && object.results[0].localPosition) {
-        const position = {
-            x: object.results[0].localPosition.x,
-            y: object.results[0].localPosition.y, // 稍微抬高一点，避免与地面重叠
-            z: object.results[0].localPosition.z
-        };
+    console.log('选中对象:', object.results[0].object);
 
-        console.log('在模型位置创建CSS3D对象:', position);
+    outlinePlugin.addOutline(object.results[0].object)
+    // // 获取点击位置的3D坐标  测试css3D
+    // if (object && object.results[0].localPosition) {
+    //     const position = {
+    //         x: object.results[0].localPosition.x,
+    //         y: object.results[0].localPosition.y, 
+    //         z: object.results[0].localPosition.z
+    //     };
 
-        try {
-            const css3dObject = createCSS3DAtPosition(position);
-            console.log('✅ CSS3D对象创建完成:', css3dObject);
-        } catch (error) {
-            console.error('创建CSS3D对象失败:', error);
-        }
-    } else if (object && object.results && object.results.length > 0 && object.results[0].worldPosition) {
-        // 备用数据结构
-        const position = {
-            x: object.results[0].worldPosition.x,
-            y: object.results[0].worldPosition.y + 2,
-            z: object.results[0].worldPosition.z
-        };
+    //     console.log('在模型位置创建CSS3D对象:', position);
 
-        console.log('在模型位置创建CSS3D对象(备用):', position);
+    //     try {
+    //         const css3dObject = createCSS3DAtPosition(position);
+    //         console.log('✅ CSS3D对象创建完成:', css3dObject);
+    //     } catch (error) {
+    //         console.error('创建CSS3D对象失败:', error);
+    //     }
+    // } else if (object && object.results && object.results.length > 0 && object.results[0].worldPosition) {
+    //     // 备用数据结构
+    //     const position = {
+    //         x: object.results[0].worldPosition.x,
+    //         y: object.results[0].worldPosition.y + 2,
+    //         z: object.results[0].worldPosition.z
+    //     };
 
-        try {
-            const css3dObject = createCSS3DAtPosition(position);
-            console.log('✅ CSS3D对象创建完成:', css3dObject);
-        } catch (error) {
-            console.error('创建CSS3D对象失败:', error);
-        }
-    }
+    //     console.log('在模型位置创建CSS3D对象(备用):', position);
+
+    //     try {
+    //         const css3dObject = createCSS3DAtPosition(position);
+    //         console.log('✅ CSS3D对象创建完成:', css3dObject);
+    //     } catch (error) {
+    //         console.error('创建CSS3D对象失败:', error);
+    //     }
+    // }
 })
 
 // 设置建筑点击处理器

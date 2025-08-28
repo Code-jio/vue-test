@@ -200,7 +200,7 @@ const engineInitialize = async () => {
         renderLoop.initialize();
     }
     mousePickPlugin = engine.getPlugin("MousePickPlugin");
-    mousePickPlugin.enabled = true;
+    mousePickPlugin.debugEnabled = true 
     buildingControlPlugin = engine.getPlugin("BuildingControlPlugin");
     css3dPlugin = engine.getPlugin("CSS3DRenderPlugin");
     modelMarkerPlugin = engine.getPlugin("ModelMarkerPlugin");
@@ -1186,4 +1186,5 @@ export {
     css3dPlugin,
     floorManager,
     waterMakerPlugin,
+    outlinePlugin,
 };
