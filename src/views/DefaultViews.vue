@@ -31,7 +31,8 @@ import {
     resourceReaderPlugin,
     mousePickPlugin,
     buildingControlPlugin,
-    outlinePlugin
+    outlinePlugin,
+    renderGeometry
 } from "@/composables/default";
 import SmokeDebugPanel from '@/components/SmokeDebugPanel.vue';
 import eventBus from "@/eventBus";
@@ -71,7 +72,7 @@ onMounted(async () => {
     await buildingControlPlugin.init(baseScene);
 
     console.log('🏢 建筑模型解析结果:', buildingControlPlugin, baseScene);
-
+    renderGeometry();
     // // 设置点击事件监听
     // setupBuildingClickHandler();
 

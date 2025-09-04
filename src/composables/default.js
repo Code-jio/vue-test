@@ -1160,6 +1160,45 @@ const updateSmokeInRenderLoop = () => {
     }
 };
 
+/**
+ * 在场景中渲染一些基础几何体
+ * 此方法会创建立方体、球体和圆柱体，并添加到基础场景中
+ */
+const renderGeometry = () => {
+    // 检查基础场景是否存在
+    if (!baseScene || !baseScene.scene) {
+        console.error('基础场景未初始化，无法渲染几何体');
+        return;
+    }
+
+    try {
+        // 创建立方体
+        const cubeGeometry = new EngineKernel.THREE.BoxGeometry(2, 2, 2);
+        const cubeMaterial = new EngineKernel.THREE.MeshBasicMaterial({ color: 0xff0000 });
+        const cube = new EngineKernel.THREE.Mesh(cubeGeometry, cubeMaterial);
+        cube.position.set(-3, 1, 0);
+        baseScene.scene.add(cube);
+
+        // 创建球体
+        const sphereGeometry = new EngineKernel.THREE.SphereGeometry(1, 32, 32);
+        const sphereMaterial = new EngineKernel.THREE.MeshBasicMaterial({ color: 0x00ff00 });
+        const sphere = new EngineKernel.THREE.Mesh(sphereGeometry, sphereMaterial);
+        sphere.position.set(0, 1, 0);
+        baseScene.scene.add(sphere);
+
+        // 创建圆柱体
+        const cylinderGeometry = new EngineKernel.THREE.CylinderGeometry(1, 1, 2, 32);
+        const cylinderMaterial = new EngineKernel.THREE.MeshBasicMaterial({ color: 0x0000ff });
+        const cylinder = new EngineKernel.THREE.Mesh(cylinderGeometry, cylinderMaterial);
+        cylinder.position.set(3, 1, 0);
+        baseScene.scene.add(cylinder);
+
+        console.log('几何体渲染成功');
+    } catch (error) {
+        console.error('渲染几何体时出错:', error);
+    }
+};
+
 export {
     useEngine,
     engineInitialize,
@@ -1173,6 +1212,9 @@ export {
     updateSmokeControls,
     initSmokeManager,
     updateSmokeInRenderLoop,
+    renderGeometry,
+
+
     smokeExamples,
     smokeControlData,
     smokeControls,
