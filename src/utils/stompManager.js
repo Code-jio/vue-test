@@ -1,7 +1,8 @@
 import { Stomp, Client } from '@stomp/stompjs'
 /**
  * STOMP WebSocket 通信管理器
- * 提供连接管理、自动重连、订阅管理、心跳机制等功能
+ * 提供底层通信管理、自动重连、订阅管理、心跳机制等核心功能
+ * 专注于技术层面的连接和消息处理，不包含业务逻辑
  */
 class StompManager {
   constructor() {
