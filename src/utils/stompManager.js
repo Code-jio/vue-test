@@ -1,4 +1,4 @@
-import { Stomp, Client } from '@stomp/stompjs'
+import { Client } from '@stomp/stompjs'
 /**
  * STOMP WebSocket 通信管理器
  * 提供底层通信管理、自动重连、订阅管理、心跳机制等核心功能
@@ -98,117 +98,116 @@ class StompManager {
       }, this.connectTimeout)
 
       try {
-        // 创建 WebSocket 连接
-        const ws = new WebSocket(url)
-        
-        // 监听 WebSocket 连接错误（同步）
-        ws.onerror = (event) => {
-          console.error('StompManager: WebSocket 连接错误', event)
-          this._clearConnectTimer()
-          this.isConnected = false
-          this.isConnecting = false
-          this.currentState = this.STATES.ERROR
-          this.pendingConnect = null
+        // 创建 STOMP 客户端
+        this.client = new Client({
+          brokerURL: url,
+          connectHeaders: {
+            login: this.options.login,
+            passcode: this.options.passcode,
+            ...this.options.headers
+          },
           
-          const error = new Error(`WebSocket connection failed: ${url}`)
-          this._emit('error', error)
-          this._emit('stateChange', this.currentState)
-          reject(error)
-        }
-        
-        // 监听 WebSocket 连接关闭
-        ws.onclose = (event) => {
-          console.log('StompManager: WebSocket 连接关闭', event.code, event.reason)
-          this._clearConnectTimer()
+          // 调试配置
+          debug: this.options.debug ? (str) => {
+            console.log('STOMP Debug:', str)
+          } : undefined,
           
-          // 如果是异常关闭且还在连接过程中，触发错误
-          if (this.isConnecting && event.code !== 1000) {
+          // 心跳配置
+          heartbeatIncoming: this.options.heartbeatIncoming,
+          heartbeatOutgoing: this.options.heartbeatOutgoing,
+          
+          // 重连配置
+          reconnectDelay: this.reconnectDelay,
+          
+          // 连接成功回调
+          onConnect: (frame) => {
+            console.log('StompManager: 连接成功', frame)
+            this._clearConnectTimer()
+            this.isConnected = true
+            this.isConnecting = false
+            this.reconnectAttempts = 0
+            this.currentState = this.STATES.CONNECTED
+            this.pendingConnect = null
+            
+            this._emit('connect', frame)
+            this._emit('stateChange', this.currentState)
+            this._resubscribeAll()
+            
+            resolve(this.client)
+          },
+          
+          // 断开连接回调
+          onDisconnect: (frame) => {
+            console.log('StompManager: 连接断开', frame)
+            this.isConnected = false
+            this.isConnecting = false
+            this.currentState = this.STATES.DISCONNECTED
+            this.pendingConnect = null
+            
+            this._emit('disconnect', frame)
+            this._emit('stateChange', this.currentState)
+          },
+          
+          // 错误处理回调
+          onStompError: (frame) => {
+            console.error('StompManager: STOMP协议错误', frame)
+            this._clearConnectTimer()
             this.isConnected = false
             this.isConnecting = false
             this.currentState = this.STATES.ERROR
             this.pendingConnect = null
             
-            const error = new Error(`WebSocket connection closed unexpectedly: ${event.code} ${event.reason}`)
+            const error = new Error(`STOMP Error: ${frame.headers?.message || 'Unknown error'}`)
+            error.frame = frame
+            
             this._emit('error', error)
             this._emit('stateChange', this.currentState)
+            
             reject(error)
-            return
-          }
+          },
           
-          // 正常关闭处理
-          this.isConnected = false
-          this.isConnecting = false
-          this.currentState = this.STATES.DISCONNECTED
-          this.pendingConnect = null
+          // WebSocket 错误处理
+          onWebSocketError: (event) => {
+            console.error('StompManager: WebSocket连接错误', event)
+            this._clearConnectTimer()
+            this.isConnected = false
+            this.isConnecting = false
+            this.currentState = this.STATES.ERROR
+            this.pendingConnect = null
+            
+            const error = new Error(`WebSocket Error: ${event.type}`)
+            error.originalEvent = event
+            
+            this._emit('error', error)
+            this._emit('stateChange', this.currentState)
+            
+            reject(error)
+          },
           
-          this._emit('disconnect')
-          this._emit('stateChange', this.currentState)
-          this._handleReconnect()
-        }
-        
-        this.client = Stomp.over(ws)
-
-        // 设置调试模式
-        if (this.options.debug) {
-          if (typeof this.options.debug === 'function') {
-            this.client.debug = this.options.debug
-          } else {
-            this.client.debug = (str) => {
-              console.log('STOMP Debug:', str)
+          // WebSocket 关闭处理
+          onWebSocketClose: (event) => {
+            console.log('StompManager: WebSocket连接关闭', event.code, event.reason)
+            this._clearConnectTimer()
+            
+            if (this.isConnecting && event.code !== 1000) {
+              this.isConnected = false
+              this.isConnecting = false
+              this.currentState = this.STATES.ERROR
+              this.pendingConnect = null
+              
+              const error = new Error(`WebSocket closed unexpectedly: ${event.code} ${event.reason}`)
+              error.code = event.code
+              error.reason = event.reason
+              
+              this._emit('error', error)
+              this._emit('stateChange', this.currentState)
+              reject(error)
             }
           }
-        } else {
-          this.client.debug = null
-        }
+        })
 
-        // 设置心跳
-        this.client.heartbeat.outgoing = this.options.heartbeatOutgoing
-        this.client.heartbeat.incoming = this.options.heartbeatIncoming
-
-        // 连接成功回调
-        const onConnect = (frame) => {
-          console.log('StompManager: 连接成功', frame)
-          this._clearConnectTimer()
-          this.isConnected = true
-          this.isConnecting = false
-          this.reconnectAttempts = 0
-          this.currentState = this.STATES.CONNECTED
-          this.pendingConnect = null
-          
-          this._emit('connect', frame)
-          this._emit('stateChange', this.currentState)
-          this._resubscribeAll()
-          
-          resolve(this.client)
-        }
-
-        // 连接错误回调
-        const onError = (error) => {
-          console.error('StompManager: 连接错误', error)
-          this._clearConnectTimer()
-          this.isConnected = false
-          this.isConnecting = false
-          this.currentState = this.STATES.ERROR
-          this.pendingConnect = null
-          
-          this._emit('error', error)
-          this._emit('stateChange', this.currentState)
-          this._handleReconnect()
-          
-          reject(error)
-        }
-
-        // 绑定 WebSocket 关闭事件（已在上面处理）
-        // ws.onclose = onWebSocketClose
-
-        // 开始连接
-        this.client.connect(
-          this.options.login,
-          this.options.passcode,
-          onConnect,
-          onError,
-          this.options.headers
-        )
+        // 激活客户端连接
+        this.client.activate()
 
       } catch (error) {
         console.error('StompManager: 创建连接失败', error)
@@ -234,21 +233,19 @@ class StompManager {
     this._clearConnectTimer()
     this.pendingConnect = null
 
-    if (this.client && this.isConnected) {
-      this.client.disconnect(() => {
+    if (this.client) {
+      try {
+        this.client.deactivate()
         console.log('StompManager: 已断开连接')
-        this.isConnected = false
-        this.isConnecting = false
-        this.currentState = this.STATES.DISCONNECTED
-        this._emit('disconnect')
-        this._emit('stateChange', this.currentState)
-      })
-    } else {
-      this.isConnected = false
-      this.isConnecting = false
-      this.currentState = this.STATES.DISCONNECTED
-      this._emit('stateChange', this.currentState)
+      } catch (error) {
+        console.error('StompManager: 断开连接时出错', error)
+      }
     }
+
+    this.isConnected = false
+    this.isConnecting = false
+    this.currentState = this.STATES.DISCONNECTED
+    this._emit('stateChange', this.currentState)
 
     // 清空订阅
     this.subscriptions.clear()
@@ -268,7 +265,11 @@ class StompManager {
 
     try {
       const message = typeof body === 'string' ? body : JSON.stringify(body)
-      this.client.send(destination, headers, message)
+      this.client.publish({
+        destination,
+        body: message,
+        headers
+      })
       console.log('StompManager: 消息已发送', { destination, body, headers })
       this._emit('messageSent', { destination, body, headers })
       return true
@@ -439,6 +440,8 @@ class StompManager {
       this.connect(this.url, this.options)
         .catch(error => {
           console.error('StompManager: 重连失败', error)
+          // 触发错误事件，让外部能够感知重连失败
+          this._emit('error', error)
         })
     }, this.reconnectDelay)
   }
