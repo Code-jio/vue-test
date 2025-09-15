@@ -141,11 +141,26 @@ class StompManager {
             console.log('StompManager: 连接断开', frame)
             this.isConnected = false
             this.isConnecting = false
-            this.currentState = this.STATES.DISCONNECTED
             this.pendingConnect = null
             
+            // 清理所有定时器
+            this._clearConnectTimer()
+            
+            // 如果是正常断开（用户主动调用disconnect），不触发重连
+            if (frame?.headers?.['x-user-disconnect'] === 'true') {
+              this.currentState = this.STATES.DISCONNECTED
+              this._emit('disconnect', frame)
+              this._emit('stateChange', this.currentState)
+              return
+            }
+            
+            // 异常断开时触发重连
+            this.currentState = this.STATES.ERROR
             this._emit('disconnect', frame)
             this._emit('stateChange', this.currentState)
+            
+            // 触发重连逻辑
+            this._handleReconnect()
           },
           
           // 错误处理回调
@@ -189,20 +204,30 @@ class StompManager {
             console.log('StompManager: WebSocket连接关闭', event.code, event.reason)
             this._clearConnectTimer()
             
-            if (this.isConnecting && event.code !== 1000) {
-              this.isConnected = false
-              this.isConnecting = false
-              this.currentState = this.STATES.ERROR
-              this.pendingConnect = null
-              
-              const error = new Error(`WebSocket closed unexpectedly: ${event.code} ${event.reason}`)
-              error.code = event.code
-              error.reason = event.reason
-              
-              this._emit('error', error)
+            // 清理连接状态
+            this.isConnected = false
+            this.isConnecting = false
+            this.pendingConnect = null
+            
+            // 如果是正常关闭（code 1000），不触发重连
+            if (event.code === 1000) {
+              this.currentState = this.STATES.DISCONNECTED
               this._emit('stateChange', this.currentState)
-              reject(error)
+              return
             }
+            
+            // 异常关闭时触发重连
+            this.currentState = this.STATES.ERROR
+            this._emit('stateChange', this.currentState)
+            
+            const error = new Error(`WebSocket closed unexpectedly: ${event.code} ${event.reason}`)
+            error.code = event.code
+            error.reason = event.reason
+            
+            this._emit('error', error)
+            
+            // 触发重连逻辑
+            this._handleReconnect()
           }
         })
 
@@ -235,7 +260,12 @@ class StompManager {
 
     if (this.client) {
       try {
-        this.client.deactivate()
+        // 设置正常断开标记，避免触发重连
+        this.client.deactivate({
+          disconnectHeaders: {
+            'x-user-disconnect': 'true'
+          }
+        })
         console.log('StompManager: 已断开连接')
       } catch (error) {
         console.error('StompManager: 断开连接时出错', error)
