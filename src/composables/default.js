@@ -193,6 +193,16 @@ const engineInitialize = async () => {
                 camera: baseScene.camera,
             },
         })
+        .register({
+            name: "PostProcessingPlugin",
+            path: "/plugins/postprocessing/PostProcessingPlugin",
+            pluginClass: EngineKernel.PostProcessingPlugin,
+            userData: {
+                scene: baseScene.scene,
+                renderer: baseScene.renderer,
+                camera: baseScene.camera,
+            },
+        })
 
     // 启动渲染循环
     renderLoop = engine.getPlugin("RenderLoopPlugin");
