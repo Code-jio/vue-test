@@ -12,6 +12,7 @@ import DefaultViews from '@/views/DefaultViews.vue'
 import TestGraph from '@/views/testGraph.vue'
 import ParticleTest from '@/views/ParticleTest.vue'
 
+import PerformanceTest from '@/views/PerformanceTest.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -111,6 +112,14 @@ const router = createRouter({
       component: ParticleTest,
       meta: {
         title: '粒子发射器测试'
+      }
+    },
+    {
+      path: '/perf',
+      name: 'performance-test',
+      component: PerformanceTest,
+      meta: {
+        title: '性能测试'
       }
     }
   ]
