@@ -82,16 +82,6 @@ const engineInitialize = async () => {
                 scene: baseScene.scene,
             },
         })
-        // 模型标注
-        .register({
-            name: 'ModelMarkerPlugin',
-            path: '/plugins/webgl/3DModelMarker',
-            pluginClass: EngineKernel.ModelMarker,
-            userData: {
-                scene: baseScene.scene,
-                resourceReaderPlugin,
-            },
-        })
         // 建筑控件
         .register({
             name: 'BuildingControlPlugin',

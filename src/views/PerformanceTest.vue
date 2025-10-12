@@ -18,6 +18,10 @@ let model,
     arr = [];
 onMounted(async () => {
     await useEngine();
+    
+    // 添加光照 - 修复材质渲染问题
+    setupLighting();
+    
     await loadModelsFromConfig();
     await buildingControlPlugin.init(baseScene);
     window.baseScene = baseScene;
@@ -31,6 +35,32 @@ onMounted(async () => {
         // console.log(arr);
     });
 });
+
+// 添加光照配置
+const setupLighting = () => {
+    // 环境光 - 提供基础照明
+    const ambientLight = new EngineKernel.THREE.AmbientLight(0x404040, 0.6);
+    baseScene.scene.add(ambientLight);
+    
+    // 方向光 - 提供主要照明和阴影
+    const directionalLight = new EngineKernel.THREE.DirectionalLight(0xffffff, 0.8);
+    directionalLight.position.set(10, 10, 5);
+    directionalLight.castShadow = true;
+    
+    // 配置阴影
+    directionalLight.shadow.mapSize.width = 2048;
+    directionalLight.shadow.mapSize.height = 2048;
+    directionalLight.shadow.camera.near = 0.5;
+    directionalLight.shadow.camera.far = 500;
+    directionalLight.shadow.camera.left = -100;
+    directionalLight.shadow.camera.right = 100;
+    directionalLight.shadow.camera.top = 100;
+    directionalLight.shadow.camera.bottom = -100;
+    
+    baseScene.scene.add(directionalLight);
+    
+    console.log('💡 光照设置完成');
+};
 
 const loadModelsFromConfig = async () => {
     const response = await fetch('./model-files.json');
@@ -50,37 +80,6 @@ const loadModelsFromConfig = async () => {
                 category: 'batch_load',
             }
         );
-
-        if (model.name === '树') {
-            model.traverse((item) => {
-                if (item.material) {
-                    // 启用alphaToCoverage优化
-                    // item.material.alphaToCoverage = true;
-
-                    // item.material.premultipliedAlpha = false
-                    // item.material.alphaHash = true
-                    item.material.alphaTest = 0.5;
-                    item.material.transparent = true; // 主动开启纹理透明
-                    item.material.depthWrite = false;
-                    item.renderOrder = 0;
-
-                    item.material.metalness = 0;
-                    item.material.roughness = 1.0;
-
-                    // 自动更新材质以确保设置生效（适用于非静态材质）
-                    if (item.material.needsUpdate !== undefined) {
-                        item.material.needsUpdate = true;
-                    }
-                }
-            });
-        } else {
-            model.traverse((item) => {
-                if (item.material) {
-                    item.material.metalness = 0;
-                    item.material.roughness = 1.0;
-                }
-            });
-        }
 
         baseScene.scene.add(model);
         return model;
