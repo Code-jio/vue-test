@@ -57,16 +57,6 @@ onMounted(async () => {
   });
 
   engine.on("init-complete", () => {
-    // Service Worker 功能暂时注释掉，如需要可以后续启用
-    // const wb = new Workbox('./utils/sw.js')
-    // wb.addEventListener('installed', (event) => {
-    //   console.log('SW_INSTALLED', {isUpdate: event.isUpdate})
-    // })
-    // wb.addEventListener('controlling', () => {
-    //   window.location.reload()
-    // })
-    // wb.register()
-
     let gltfLoader = engine.getPlugin("ResourceReaderPlugin").gltfLoader;
 
     gltfLoader.load("/static/model/Horse.glb", (gltf) => {

@@ -903,12 +903,12 @@ const createSmoke = (options = {}) => {
         // 创建烟雾效果
         const smokeEffect = smokeManager.createSmokeEffect(smokeConfig);
 
-        console.log("🌫️ 烟雾效果创建成功", {
-            id: id,
-            position: position,
-            maxParticles: smokeConfig.maxParticles,
-            emissionRate: smokeConfig.emissionRate,
-        });
+        // console.log("🌫️ 烟雾效果创建成功", {
+        //     id: id,
+        //     position: position,
+        //     maxParticles: smokeConfig.maxParticles,
+        //     emissionRate: smokeConfig.emissionRate,
+        // });
 
         // 执行创建成功回调
         if (typeof options.onCreated === "function") {
