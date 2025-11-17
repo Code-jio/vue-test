@@ -1,0 +1,30 @@
+import * as THREE from 'three';
+import { BasePlugin } from "../basePlugin";
+export declare class DataRainEffect extends BasePlugin {
+    scene: THREE.Scene | null;
+    camera: THREE.PerspectiveCamera;
+    renderer: THREE.WebGLRenderer;
+    private rainParams;
+    private particles;
+    private particleMaterial;
+    private particleGeometry;
+    private textures;
+    private animationId;
+    private particleData;
+    private charAtlasCache;
+    private scaleListener;
+    constructor(meta: any);
+    private addScaleListener;
+    private handleSceneScaleChange;
+    init(): Promise<void>;
+    private createCharAtlas;
+    private createShaderMaterial;
+    private createDataRain;
+    private updateParticles;
+    private startAnimation;
+    stopAnimation(): void;
+    restartAnimation(): void;
+    setDensity(density: number): void;
+    updateParams(params: Partial<typeof this.rainParams>): void;
+    dispose(): void;
+}

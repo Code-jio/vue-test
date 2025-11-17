@@ -9,7 +9,7 @@ declare class BasePlugin {
     instance: any;
     exports: any;
     constructor(meta: PluginMeta);
-    init(coreInterface: any): Promise<void>;
+    init(): Promise<void>;
     load(): Promise<void>;
     unload(): Promise<void>;
 }

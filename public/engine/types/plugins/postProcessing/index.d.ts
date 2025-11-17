@@ -1,0 +1,41 @@
+import { THREE, BasePlugin } from "../basePlugin";
+import { EffectComposer, RenderPass, ShaderPass, OutputPass, UnrealBloomPass, SSAOPass, SSAARenderPass, SSRPass, ReflectorForSSRPass } from "../../utils/three-imports";
+export declare class PostProcessingPlugin extends BasePlugin {
+    composer: EffectComposer | null;
+    renderPass: RenderPass | null;
+    fxaaPass: ShaderPass | null;
+    outputPass: OutputPass | null;
+    bloomPass: UnrealBloomPass | null;
+    ssaoPass: SSAOPass | null;
+    ssaaPass: SSAARenderPass | null;
+    ssrPass: SSRPass | null;
+    groundReflector: ReflectorForSSRPass | null;
+    scene: THREE.Scene;
+    camera: THREE.PerspectiveCamera;
+    renderer: THREE.WebGLRenderer;
+    options: {
+        bloom: boolean;
+        ssao: boolean;
+        ssaa: boolean;
+        fxaa: boolean;
+        ssr: boolean;
+    };
+    constructor(meta: any);
+    init(): Promise<void>;
+    initBloom(): void;
+    initSSAO(): void;
+    initSSAA(): void;
+    initFXAA(): void;
+    initSSR(): void;
+    createGroundReflector(): void;
+    render(): Promise<void>;
+    update(): void;
+    resize(): void;
+    toggleEffect(effect: keyof typeof this.options, enabled: boolean): void;
+    resetComposer(): void;
+    setBloomParams(strength: number, radius: number, threshold: number): void;
+    setFXAAParams(enabled: boolean): void;
+    setSSRParams(opacity: number, maxDistance: number, thickness: number): void;
+    setGroundReflector(enabled: boolean): void;
+    dispose(): void;
+}

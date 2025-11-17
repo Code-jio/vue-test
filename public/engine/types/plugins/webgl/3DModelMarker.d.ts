@@ -14,12 +14,20 @@ interface PathPoint {
     rotation?: THREE.Euler;
     duration?: number;
 }
+interface AnimationState {
+    isPlaying: boolean;
+    currentTime: number;
+    duration: number;
+    loop: boolean;
+    direction: "forward" | "backward" | "pingpong";
+}
 interface ModelMarkerConfig {
     modelUrl: string;
     name?: string;
     position?: Array<number> | THREE.Vector3;
     rotation?: Array<number> | THREE.Euler;
     scale?: Array<number> | THREE.Vector3;
+    color?: Array<number> | THREE.Vector4 | THREE.Color | null;
     show?: boolean;
     autoLoad?: boolean;
     enableAnimations?: boolean;
@@ -34,7 +42,48 @@ interface ModelMarkerConfig {
     materialOverrides?: {
         [key: string]: any;
     };
-    textureQuality?: 'low' | 'medium' | 'high';
+    textureQuality?: "low" | "medium" | "high";
+}
+interface ModelInstance {
+    id: string;
+    fileName: string;
+    name: string;
+    model: THREE.Group | THREE.Scene;
+    originalModel?: THREE.Group;
+    config: ModelMarkerConfig;
+    animations: THREE.AnimationClip[];
+    mixer?: THREE.AnimationMixer;
+    keyframeAnimation?: {
+        keyframes: Keyframe[];
+        state: AnimationState;
+    };
+    pathAnimation?: {
+        path: PathPoint[];
+        state: AnimationState;
+        curve?: THREE.CatmullRomCurve3;
+    };
+    isLoaded: boolean;
+    material: null | THREE.Material;
+}
+interface moveConfig {
+    pathPoints: Array<{
+        x: number;
+        y: number;
+        z: number;
+    }> | THREE.Vector3[];
+    duration?: number;
+    loop?: boolean;
+    autoStart?: boolean;
+    showPath?: boolean;
+    pathLineColor?: number;
+    pathLineWidth?: number;
+    easing?: string;
+    lookAtDirection?: boolean;
+    onStart?: () => void;
+    onUpdate?: (progress: number) => void;
+    onComplete?: () => void;
+    onStop?: () => void;
+    cycle?: boolean;
 }
 export declare class ModelMarker extends BasePlugin {
     private scene;
@@ -45,11 +94,12 @@ export declare class ModelMarker extends BasePlugin {
     private clock;
     private enableDebugMode;
     private defaultConfig;
+    private animateGroup;
     constructor(meta?: any);
     /**
      * 插件初始化
      */
-    init(coreInterface: any): Promise<void>;
+    initialize(): Promise<void>;
     /**
      * 基类要求的load方法
      */
@@ -61,17 +111,29 @@ export declare class ModelMarker extends BasePlugin {
     /**
      * 添加3D模型标记
      */
-    addModel(config: ModelMarkerConfig): string;
+    addModel(config: ModelMarkerConfig): Promise<ModelInstance>;
     /**
      * 异步加载模型（不使用缓存，直接加载）
      */
     private loadModelAsync;
     /**
+     * Promise版本的模型加载方法
+     */
+    private loadModelWithPromise;
+    /**
      * 直接加载模型（绕过缓存系统，提升性能）
      */
     private loadModelDirect;
     /**
-     * 模型加载完成处理（优化版本）
+     * 加载模型的核心实现
+     */
+    private loadModelDirectWithCallback;
+    /**
+     * 应用变换参数到模型实例
+     */
+    private applyTransformToInstance;
+    /**
+     * 模型加载完成处理
      */
     private onModelLoaded;
     /**
@@ -129,7 +191,7 @@ export declare class ModelMarker extends BasePlugin {
     /**
      * 创建路径动画
      */
-    createPathAnimation(modelId: string, pathPoints: PathPoint[], loop?: boolean): boolean;
+    createPathAnimation(modelId: string, pathPoints: PathPoint[], loop?: boolean, cycle?: boolean): boolean;
     /**
      * 播放路径动画
      */
@@ -217,10 +279,6 @@ export declare class ModelMarker extends BasePlugin {
      */
     private extractFileNameFromUrl;
     /**
-     * 递归设置模型及其子对象的名称
-     */
-    private setModelNamesRecursively;
-    /**
      * 资源加载完成回调
      */
     private onResourceLoaded;
@@ -228,5 +286,66 @@ export declare class ModelMarker extends BasePlugin {
      * 销毁插件
      */
     dispose(): void;
+    /**
+     * 新增模型沿路径功能
+     * 提供默认参数
+     * 模型移动时实时创建路径线Line
+     */
+    moveByPath(model: THREE.Group | THREE.Scene, options: moveConfig): {};
+    getModelById(id: string): ModelInstance | null;
+    /**
+     * 从颜色配置中获取THREE.Color对象
+     * @return THREE.Color
+     */
+    private getColorFromConfig;
+    /**
+     * 设置模型颜色
+     * @param modelId 模型ID
+     * @param color 颜色 - 支持数组[r,g,b]、THREE.Vector4、THREE.Color或null
+     * @returns boolean 是否设置成功
+     */
+    setModelColor(modelId: string, color: Array<number> | THREE.Vector4 | THREE.Color | null): boolean;
+    /**
+     * 将颜色应用到指定材质
+     * @param material THREE.js材质对象
+     * @param color THREE.Color颜色对象
+     * @returns boolean 是否应用成功
+     */
+    private applyColorToMaterial;
+    /**
+     * 恢复模型原始颜色
+     * @param modelId 模型ID
+     * @returns boolean 是否恢复成功
+     */
+    restoreModelOriginalColor(modelId: string): boolean;
+    /**
+     * 将模型移动到指定位置
+     * @param model 模型对象或模型ID
+     * @param targetPosition 目标位置 (支持数组[x,y,z]，对象{x,y,z}或THREE.Vector3)
+     * @param options 可选配置参数
+     * @returns 控制对象，包含停止、暂停、恢复等方法
+     */
+    moveToPosition(model: THREE.Group | THREE.Scene | string, targetPosition: Array<number> | {
+        x: number;
+        y: number;
+        z: number;
+    } | THREE.Vector3, options?: {
+        duration?: number;
+        easing?: string;
+        lookAtDirection?: boolean;
+        onStart?: () => void;
+        onUpdate?: (progress: number) => void;
+        onComplete?: () => void;
+        onStop?: () => void;
+        relative?: boolean;
+        updateRotation?: boolean;
+    }): Promise<{
+        start: () => Promise<void>;
+        stop: () => void;
+        pause: () => void;
+        resume: () => void;
+        getProgress: () => number;
+        isPlaying: () => boolean;
+    }>;
 }
 export {};

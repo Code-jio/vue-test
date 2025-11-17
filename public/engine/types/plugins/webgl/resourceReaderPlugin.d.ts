@@ -1,20 +1,13 @@
 import { THREE, BasePlugin } from "../basePlugin";
-import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader";
-import { TaskPriority, TaskStatus } from './asyncTaskScheduler';
-interface ResourceReaderConfig {
-    url?: string;
-    maxCacheSize?: number;
-    maxConcurrentLoads?: number;
-    enableDraco?: boolean;
-    dracoPath?: string;
-    supportedFormats?: string[];
-    autoDispose?: boolean;
-}
+import { GLTFLoader } from "../../utils/three-imports";
+import { TaskPriority, TaskStatus } from "../../tools/asyncTaskScheduler";
 export declare class ResourceReaderPlugin extends BasePlugin {
     gltfLoader: GLTFLoader;
     private dracoLoader;
+    private ktx2Loader;
+    private meshoptDecoder;
     private taskScheduler;
-    private resourceCache;
+    private serviceWorkerRegistration;
     private loadingTasks;
     private loadingQueue;
     private activeLoads;
@@ -23,46 +16,41 @@ export declare class ResourceReaderPlugin extends BasePlugin {
     private maxCacheSize;
     private maxConcurrentLoads;
     private taskIdCounter;
+    private renderer;
     private static readonly DEFAULT_CONFIG;
-    /**
-     * 创建带有默认配置的ResourceReaderPlugin实例
-     * @param config 可选的配置参数
-     * @returns ResourceReaderPlugin实例
-     */
-    static create(config?: Partial<ResourceReaderConfig>): ResourceReaderPlugin;
-    /**
-     * 创建禁用DRACO的ResourceReaderPlugin实例
-     * @param config 可选的配置参数
-     * @returns ResourceReaderPlugin实例
-     */
-    static createBasic(config?: Partial<ResourceReaderConfig>): ResourceReaderPlugin;
-    /**
-     * 创建高性能配置的ResourceReaderPlugin实例
-     * @param config 可选的配置参数
-     * @returns ResourceReaderPlugin实例
-     */
-    static createHighPerformance(config?: Partial<ResourceReaderConfig>): ResourceReaderPlugin;
     constructor(userData?: any);
     /**
-     * 验证和标准化配置参数
-     */
-    private validateAndNormalizeConfig;
+     * 初始化，默认执行
+    */
+    initialize(): void;
     /**
-     * 初始化加载器
+     * 初始化DRACO解压器
      */
-    private initializeLoaders;
+    private initializeDracoLoader;
+    /**
+     * 初始化KTX2纹理加载器
+     */
+    private initializeKTX2Loader;
+    /**
+     * 异步初始化KTX2Loader（需要renderer）
+     */
+    private initializeKTX2LoaderAsync;
+    /**
+     * 初始化Meshopt量化解码器
+     */
+    private initializeMeshoptDecoder;
+    /**
+     * 异步初始化Meshopt解码器
+     */
+    private initializeMeshoptDecoderAsync;
     /**
      * 初始化任务调度器
      */
     private initializeTaskScheduler;
     /**
-     * 验证DRACO解码器文件是否存在
+     * 初始化Service Worker网络拦截器
      */
-    private verifyDracoDecoder;
-    /**
-     * 插件初始化
-     */
-    init(coreInterface: any): Promise<void>;
+    private initializeServiceWorker;
     /**
      * 基类要求的load方法
      */
@@ -75,7 +63,7 @@ export declare class ResourceReaderPlugin extends BasePlugin {
         retryCount?: number;
         category?: string;
         metadata?: any;
-    }): Promise<THREE.Group>;
+    }): Promise<THREE.Group | THREE.Scene | THREE.Object3D>;
     /**
      * 批量异步加载模型
      */
@@ -85,7 +73,7 @@ export declare class ResourceReaderPlugin extends BasePlugin {
         category?: string;
     }): Promise<Array<{
         url: string;
-        model?: THREE.Group;
+        model?: THREE.Group | THREE.Scene | THREE.Object3D;
         error?: Error;
     }>>;
     /**
@@ -161,50 +149,15 @@ export declare class ResourceReaderPlugin extends BasePlugin {
      */
     private generateTaskId;
     /**
-     * 添加到缓存
-     */
-    private addToCache;
-    /**
-     * 从缓存获取资源
-     */
-    private getCachedResource;
-    /**
-     * 确保缓存空间足够
-     */
-    private ensureCacheSpace;
-    /**
-     * 估算模型大小
-     */
-    private estimateModelSize;
-    /**
-     * 获取当前缓存大小
-     */
-    /**
-     * 清理特定资源
-     */
-    disposeResource(url: string): void;
-    /**
-     * 清理所有缓存
-     */
-    clearCache(): void;
-    /**
-     * 开始缓存清理定时器
-     */
-    private startCacheCleanup;
-    /**
-     * 获取缓存状态
-     */
-    getCacheStatus(): {
-        maxSize: number;
-        itemCount: number;
-        dracoEnabled: boolean;
-    };
-    /**
      * 获取加载器配置信息
      */
     getLoaderInfo(): {
         dracoEnabled: boolean;
         dracoPath: string | undefined;
+        ktx2Enabled: boolean;
+        ktx2Path: string | undefined;
+        meshoptEnabled: boolean;
+        meshoptPath: string | undefined;
         supportedFormats: string[];
     };
     /**
@@ -221,8 +174,21 @@ export declare class ResourceReaderPlugin extends BasePlugin {
      */
     preload(urls: string[]): Promise<any[]>;
     /**
+     * 设置模型名称
+     */
+    setModelName(object: THREE.Group | THREE.Scene | THREE.Object3D, baseName: string): void;
+    /**
+     * 获取模型名称
+     */
+    getModelName(object: THREE.Group | THREE.Scene | THREE.Object3D): string;
+    /**
+     * 从文件路径提取文件名
+     */
+    extractFileNameFromPath(filePath: string): string;
+    /**
      * 销毁插件
      */
     dispose(): void;
+    private processLoadedModel;
+    private isBuildingModel;
 }
-export {};

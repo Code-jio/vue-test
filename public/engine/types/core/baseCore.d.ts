@@ -1,6 +1,5 @@
 import { PluginInstance } from "../types/core";
 import PluginManager from "./pluginManager";
-import { PluginMeta } from "../types/Plugin";
 import { EventDispatcher } from "../eventBus/eventDispatch";
 interface InitParams {
     pluginsParams: [];
@@ -27,13 +26,12 @@ declare class BaseCore {
     gpuManager: any;
     constructor(InitParams: InitParams);
     private _startAsyncInit;
-    private _initPlugins;
     getPlugin(name: string): any;
-    register(pluginMeta: PluginMeta): this;
+    private register;
     unregisterPlugin(plugin: PluginInstance): boolean;
-    _loadSync(plugin: PluginInstance): Promise<void>;
-    _loadAsync(plugin: PluginInstance): Promise<void>;
-    _unload(plugin: PluginInstance): void;
+    private _loadSync;
+    private _loadAsync;
+    private _unload;
     private _withPerfMonitoring;
     _recordMetrics(methodName: string, data: {
         duration: number;

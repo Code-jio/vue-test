@@ -1,0 +1,71 @@
+import { Color, Matrix4, MeshDepthMaterial, ShaderMaterial, Vector2, WebGLRenderTarget, WebGLRenderer, Mesh, Material, PerspectiveCamera, Scene } from 'three';
+declare class Pass {
+    isPass: boolean;
+    enabled: boolean;
+    needsSwap: boolean;
+    clear: boolean;
+    renderToScreen: boolean;
+    constructor();
+    setSize(width: number, height: number): void;
+    render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget, deltaTime: number, maskActive: boolean): void;
+    dispose(): void;
+}
+declare class FullScreenQuad {
+    _mesh: Mesh | null;
+    constructor(material: Material | null);
+    dispose(): void;
+    render(renderer: WebGLRenderer): void;
+    get material(): Material | Material[] | null;
+    set material(value: Material | Material[] | null);
+}
+declare class OutlinePass extends Pass {
+    renderScene: Scene;
+    renderCamera: PerspectiveCamera;
+    selectedObjects: any[];
+    visibleEdgeColor: Color;
+    hiddenEdgeColor: Color;
+    edgeGlow: number;
+    usePatternTexture: boolean;
+    edgeThickness: number;
+    edgeStrength: number;
+    downSampleRatio: number;
+    pulsePeriod: number;
+    _visibilityCache: Map<any, any>;
+    resolution: Vector2;
+    renderTargetMaskBuffer: WebGLRenderTarget;
+    depthMaterial: MeshDepthMaterial;
+    prepareMaskMaterial: ShaderMaterial;
+    renderTargetDepthBuffer: WebGLRenderTarget;
+    renderTargetMaskDownSampleBuffer: WebGLRenderTarget;
+    renderTargetBlurBuffer1: WebGLRenderTarget;
+    renderTargetBlurBuffer2: WebGLRenderTarget;
+    edgeDetectionMaterial: ShaderMaterial;
+    renderTargetEdgeBuffer1: WebGLRenderTarget;
+    renderTargetEdgeBuffer2: WebGLRenderTarget;
+    separableBlurMaterial1: ShaderMaterial;
+    separableBlurMaterial2: ShaderMaterial;
+    overlayMaterial: ShaderMaterial;
+    copyUniforms: any;
+    materialCopy: ShaderMaterial;
+    _oldClearColor: Color;
+    oldClearAlpha: number;
+    fsQuad: FullScreenQuad;
+    tempPulseColor1: Color;
+    tempPulseColor2: Color;
+    textureMatrix: Matrix4;
+    patternTexture: any;
+    static BlurDirectionX: Vector2;
+    static BlurDirectionY: Vector2;
+    constructor(resolution: any, scene: Scene, camera: PerspectiveCamera, selectedObjects: any[]);
+    dispose(): void;
+    setSize(width: number, height: number): void;
+    changeVisibilityOfSelectedObjects(bVisible: boolean): void;
+    changeVisibilityOfNonSelectedObjects(bVisible: boolean): void;
+    updateTextureMatrix(): void;
+    render(renderer: WebGLRenderer, writeBuffer: WebGLRenderTarget, readBuffer: WebGLRenderTarget, deltaTime: number, maskActive: boolean): void;
+    getPrepareMaskMaterial(): ShaderMaterial;
+    getEdgeDetectionMaterial(): ShaderMaterial;
+    getSeperableBlurMaterial(maxRadius: number): ShaderMaterial;
+    getOverlayMaterial(): ShaderMaterial;
+}
+export default OutlinePass;

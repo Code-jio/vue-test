@@ -2,9 +2,9 @@ import { THREE, BasePlugin } from "../basePlugin";
 interface TextStyle {
     fontSize: number;
     fontFamily: string;
-    fontWeight: 'normal' | 'bold' | 'lighter' | 'bolder';
+    fontWeight: "normal" | "bold" | "lighter" | "bolder";
     color: string;
-    textAlign: 'left' | 'center' | 'right';
+    textAlign: "left" | "center" | "right";
     lineHeight: number;
     maxWidth?: number;
     textShadow?: {
@@ -27,10 +27,10 @@ interface BackgroundStyle {
     border?: {
         width: number;
         color: string;
-        style: 'solid' | 'dashed' | 'dotted';
+        style: "solid" | "dashed" | "dotted";
     };
     gradient?: {
-        type: 'linear' | 'radial';
+        type: "linear" | "radial";
         colors: string[];
         stops?: number[];
     };
@@ -39,19 +39,24 @@ interface ImageConfig {
     url: string;
     width?: number;
     height?: number;
-    position: 'left' | 'right' | 'top' | 'bottom' | 'background';
+    position: "left" | "right" | "top" | "bottom" | "background";
     margin?: number;
     opacity?: number;
 }
 interface TextMarkerConfig {
     text: string;
-    position: Array<number> | THREE.Vector3;
+    position: Array<number> | THREE.Vector3 | {
+        x: number;
+        y: number;
+        z: number;
+    };
     textStyle?: Partial<TextStyle>;
     backgroundStyle?: Partial<BackgroundStyle>;
     image?: ImageConfig;
     scale?: number;
+    fixedScale: boolean;
     rotation?: number;
-    show?: boolean;
+    visible?: boolean;
     autoSize?: boolean;
     minSize?: number;
     maxSize?: number;
@@ -62,23 +67,40 @@ interface TextMarkerConfig {
     name?: string;
     userData?: any;
 }
+interface MarkerInstance {
+    id: string;
+    name: string;
+    sprite: THREE.Sprite;
+    material: THREE.SpriteMaterial;
+    canvas: HTMLCanvasElement;
+    context: CanvasRenderingContext2D;
+    config: TextMarkerConfig;
+    isVisible: boolean;
+    isHovered: boolean;
+    isDirty: boolean;
+    boundingBox: {
+        min: THREE.Vector2;
+        max: THREE.Vector2;
+    };
+}
 export declare class TextMarkerPlugin extends BasePlugin {
     private scene;
     private camera;
     private renderer;
-    private markerInstances;
-    private instanceIdCounter;
+    markerInstances: Map<string, MarkerInstance>;
+    instanceIdCounter: number;
     private raycaster;
     private mouse;
-    private enableDebugMode;
-    private defaultTextStyle;
-    private defaultBackgroundStyle;
-    private imageCache;
+    enableDebugMode: boolean;
+    defaultTextStyle: TextStyle;
+    defaultBackgroundStyle: BackgroundStyle;
+    imageCache: Map<string, HTMLImageElement>;
+    private defaultConfig;
     constructor(meta?: any);
     /**
      * 插件初始化
      */
-    init(coreInterface: any): Promise<void>;
+    initialize(): void;
     /**
      * 基类要求的load方法
      */

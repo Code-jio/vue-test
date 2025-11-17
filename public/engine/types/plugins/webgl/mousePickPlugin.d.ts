@@ -30,7 +30,8 @@ debug模式：显示射线、包围盒、碰撞网格
  */
 declare enum PickMode {
     SINGLE = "single",// 单选
-    BOX_SELECT = "box"
+    BOX_SELECT = "box",// 框选
+    LINE = "Line"
 }
 interface PickResult {
     object: THREE.Object3D;
@@ -54,9 +55,9 @@ interface PickConfig {
     tolerance: number;
     maxDistance: number;
     sortByDistance: boolean;
-    includeInvisible: boolean;
     recursive: boolean;
     enableDebug: boolean;
+    showHighlight: boolean;
 }
 /**
  * 鼠标拾取插件
@@ -69,6 +70,7 @@ export declare class MousePickPlugin extends BasePlugin {
     private scene;
     private renderer;
     private controller;
+    highLight: boolean;
     private config;
     private selectedObjects;
     private hoveredObject;
@@ -81,10 +83,21 @@ export declare class MousePickPlugin extends BasePlugin {
     private boundKeyDown;
     private boundKeyUp;
     private debugRayLine;
-    private debugEnabled;
+    debugEnabled: boolean;
     private isCtrlPressed;
     private isShiftPressed;
     private controllerOriginalState;
+    private highlightedObject;
+    private highlightOutline;
+    private outlineMaterial;
+    private openedBuilding;
+    private facades;
+    private buildingMode;
+    private lastClickTime;
+    private lastClickedObject;
+    private doubleClickDelay;
+    private linePoints;
+    enable: Boolean;
     constructor(meta: any);
     /**
      * 初始化事件监听器
@@ -122,6 +135,12 @@ export declare class MousePickPlugin extends BasePlugin {
      * 执行射线投射拾取
      */
     private performRaycastPick;
+    /**
+     * 检查物体及其整个父级链是否可见
+     * @param object 要检查的物体
+     * @returns 如果物体及其所有父级都可见则返回true
+     */
+    private isObjectFullyVisible;
     /**
      * 获取可拾取的物体列表
      */
@@ -165,23 +184,39 @@ export declare class MousePickPlugin extends BasePlugin {
     /**
      * 添加到选中列表
      */
-    private addToSelection;
+    addToSelection(object: THREE.Object3D): void;
     /**
      * 从选中列表移除
      */
-    private removeFromSelection;
+    removeFromSelection(object: THREE.Object3D): void;
     /**
      * 清空选择
      */
-    private clearSelection;
+    clearSelection(): void;
     /**
      * 更新调试射线
      */
     private updateDebugRay;
     /**
+     * 判断对象是否应该排除高亮（天空盒、地板等）
+     */
+    private isExcludedFromHighlight;
+    /**
+     * 为对象创建边框高亮
+     */
+    private createOutlineForObject;
+    /**
+     * 高亮指定对象（边框泛光效果）
+     */
+    private highlightObjectWithOutline;
+    /**
+     * 清除边框高亮
+     */
+    clearOutlineHighlight(): void;
+    /**
      * 发送拾取事件
      */
-    private emitPickEvent;
+    emitPickEvent(eventName: string, data: any): void;
     /**
      * 设置拾取配置
      */
@@ -195,6 +230,10 @@ export declare class MousePickPlugin extends BasePlugin {
      */
     setPickMode(mode: PickMode): void;
     /**
+     * 获取拾取模式
+     */
+    getPickMode(): string;
+    /**
      * 设置拾取容差
      */
     setTolerance(tolerance: number): void;
@@ -206,6 +245,22 @@ export declare class MousePickPlugin extends BasePlugin {
      * 获取当前悬停的物体
      */
     getHoveredObject(): THREE.Object3D | null;
+    /**
+     * 获取当前高亮的物体
+     */
+    getHighlightedObject(): THREE.Object3D | null;
+    /**
+     * 手动清除高亮效果
+     */
+    clearHighlight(): void;
+    /**
+     * 设置是否显示轮廓高亮
+     */
+    setShowHighlight(enable: boolean): void;
+    /**
+     * 获取轮廓高亮开关状态
+     */
+    getShowHighlight(): boolean;
     /**
      * 启用/禁用调试模式
      */
@@ -234,5 +289,59 @@ export declare class MousePickPlugin extends BasePlugin {
      * 调试控制器状态
      */
     debugControllerState(): void;
+    /**
+     * 检测对象是否属于建筑
+     */
+    private isBuildingObject;
+    /**
+     * 查找建筑的根对象
+     */
+    private findBuildingRoot;
+    /**
+     * 查找建筑的外立面对象
+     */
+    private findBuildingFacades;
+    /**
+     * 隐藏建筑外立面
+     */
+    private hideBuildingFacades;
+    /**
+     * 显示建筑外立面
+     */
+    private showBuildingFacades;
+    /**
+     * 打开建筑，进入建筑控制模式
+     */
+    openBuilding(targetObject?: THREE.Object3D): void;
+    /**
+     * 关闭建筑，退出建筑控制模式
+     */
+    closeBuilding(): void;
+    /**
+     * 获取当前打开的建筑
+     */
+    getOpenedBuilding(): THREE.Object3D | null;
+    /**
+     * 检查是否处于建筑模式
+     */
+    isBuildingMode(): boolean;
+    /**
+     * 切换建筑模式（打开/关闭）
+     */
+    toggleBuilding(targetObject?: THREE.Object3D): void;
+    /**
+     * 获取对象的模型名称（优先从userData.modelName读取）
+     */
+    private getModelName;
+    private isPickEmptyArea;
+    private isPickedDevice;
+    /**
+     * 获取当前的点集
+     */
+    getLinePoints(): THREE.Vector3[];
+    /**
+     * 清空点集
+     */
+    clearLinePoints(): void;
 }
 export {};

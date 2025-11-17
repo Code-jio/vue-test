@@ -4,18 +4,21 @@ import { THREE } from "../basePlugin";
  */
 export interface FloorConfig {
     enabled: boolean;
-    type: 'water' | 'static' | 'reflection' | 'grid' | 'glow' | 'infinite' | 'none';
+    type: "water" | "static" | "reflection" | "grid" | "glow" | "infinite" | "Hexgon" | "none";
     size: number;
     position: [number, number, number];
     waterConfig?: {
-        color: number;
-        sunColor: number;
-        distortionScale: number;
-        textureWidth: number;
-        textureHeight: number;
-        alpha: number;
-        time: number;
+        textureWidth?: number;
+        textureHeight?: number;
+        alpha?: number;
+        time?: number;
+        waterColor?: number;
+        color?: number;
+        sunColor?: number;
+        distortionScale?: number;
         waterNormalsUrl?: string;
+        animationSpeed?: number;
+        waveScale?: number;
     };
     staticConfig?: {
         texture?: string;
@@ -68,6 +71,7 @@ export declare class FloorManager {
     private reflectionCamera;
     private lastCameraPosition;
     private animationTime;
+    hexagonFloor: any;
     constructor(scene: THREE.Scene);
     /**
      * 创建地板
@@ -78,18 +82,6 @@ export declare class FloorManager {
      */
     private createWaterFloor;
     /**
-     * 生成程序化水面法线贴图
-     */
-    private generateProceduralWaterNormals;
-    /**
-     * 水面顶点着色器
-     */
-    private getWaterVertexShader;
-    /**
-     * 水面片段着色器
-     */
-    private getWaterFragmentShader;
-    /**
      * 创建静态贴图地板
      */
     private createStaticFloor;
@@ -97,10 +89,11 @@ export declare class FloorManager {
     private createGridFloor;
     private createGlowFloor;
     private createInfiniteFloor;
+    private createHexgonFloor;
     /**
      * 更新地板动画
      */
-    updateFloor(deltaTime: number, camera?: THREE.Camera): void;
+    updateFloor(deltaTime: number, elapsedTime: number, camera?: THREE.Camera): void;
     /**
      * 更新反射
      */
@@ -112,7 +105,7 @@ export declare class FloorManager {
     /**
      * 切换地板类型
      */
-    switchFloorType(type: FloorConfig['type'], config: FloorConfig, renderer: THREE.WebGLRenderer): void;
+    switchFloorType(type: FloorConfig["type"], config: FloorConfig, renderer: THREE.WebGLRenderer): void;
     /**
      * 获取地板信息
      */

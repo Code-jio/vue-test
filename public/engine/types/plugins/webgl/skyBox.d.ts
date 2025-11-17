@@ -14,7 +14,7 @@ interface SkyBoxConfig {
     hdrIntensity?: number;
     exrMapPath?: string;
     exrIntensity?: number;
-    exrDataType?: 'HalfFloat' | 'Float';
+    exrDataType?: "HalfFloat" | "Float";
     skyConfig?: {
         turbidity?: number;
         rayleigh?: number;
@@ -40,7 +40,6 @@ export declare class SkyBox extends BasePlugin {
     private renderer;
     private mesh;
     private config;
-    private boundHandleResize;
     private skyMaterial;
     private sun;
     constructor(meta: any);
@@ -58,7 +57,7 @@ export declare class SkyBox extends BasePlugin {
     /**
      * 更新天空参数（仅对程序化天空有效）
      */
-    updateSkyConfig(newConfig: Partial<SkyBoxConfig['skyConfig']>): void;
+    updateSkyConfig(newConfig: Partial<SkyBoxConfig["skyConfig"]>): void;
     /**
      * 切换天空盒类型
      */
@@ -76,8 +75,8 @@ export declare class SkyBox extends BasePlugin {
      */
     setVisible(visible: boolean): void;
     private cleanupCurrentSkyBox;
-    private handleResize;
     private sceneReadyHandler;
+    private getEnvmapFromHDRTexture;
     destroy(): void;
 }
 export { SkyBoxType };

@@ -1,110 +1,125 @@
-import { THREE, BasePlugin } from "../basePlugin";
-import { FloorConfig } from "./floorManager";
-import { BaseControls } from "./baseControl";
-/**
- * BaseScene - 基础场景插件（增强版）
- *
- * 🏢 地板功能使用示例：
- *
- * // 1. 创建带水面地板的场景
- * const scene = BaseScene.createWithFloor('water', 20000)
- *
- * // 2. 动态切换地板类型
- * scene.setFloorType('grid')  // 切换到网格地板
- * scene.setWaterFloor(30000)  // 设置水面地板
- * scene.setStaticFloor(10000, { color: 0x654321 })  // 设置静态地板
- *
- * // 3. 使用贴图的地板
- * scene.setStaticFloorWithTexture(15000, './textures/floor.jpg')  // 单贴图地板
- * scene.setStaticFloorWithPBR(20000, {  // PBR地板
- *     diffuse: './textures/floor_diffuse.jpg',
- *     normal: './textures/floor_normal.jpg',
- *     roughness: './textures/floor_roughness.jpg',
- *     metallic: './textures/floor_metallic.jpg'
- * })
- * scene.setWaterFloorWithTexture(25000, './textures/water_normals.jpg')  // 水面法线贴图
- *
- * // 4. 配置地板参数
- * scene.updateFloorConfig({
- *     waterConfig: {
- *         color: 0x004466,
- *         distortionScale: 5.0
- *     }
- * })
- *
- * // 5. 切换地板显示
- * scene.toggleFloor(false)  // 隐藏地板
- * scene.toggleFloor(true)   // 显示地板
- *
- * // 6. 获取地板信息
- * const floorInfo = scene.getFloorInfo()
- * console.log('地板信息:', floorInfo)
- *
- * 🎥 相机切换功能使用示例：
- *
- * // 1. 2D/3D相机切换
- * scene.switchTo2D()        // 切换到2D俯视模式
- * scene.switchTo3D()        // 切换到3D透视模式
- * scene.toggleCameraMode()  // 自动切换模式
- *
- * // 2. 相机状态查询
- * const mode = scene.getCameraMode()         // 获取当前模式 '2D' 或 '3D'
- * const camera = scene.getCurrentCamera()    // 获取当前激活的相机
- *
- * // 3. 2D相机缩放控制
- * const zoom = scene.get2DCameraZoom()       // 获取2D相机缩放
- * scene.set2DCameraZoom(2.0)                 // 设置2D相机缩放
- * scene.apply2DCameraZoomDelta(0.5)          // 增加缩放增量
- *
- * 支持的地板类型：
- * - water: 水面地板（参照three.js webgl_shaders_ocean）
- * - static: 静态贴图地板（支持PBR材质）
- * - reflection: 实时反射地板
- * - grid: 网格地板（程序生成）
- * - glow: 发光地板（带脉冲动画）
- * - infinite: 无限地板（跟随相机）
- */
-interface PerformanceStats {
-    fps: number;
-    frameTime: number;
-    avgFrameTime: number;
-    frameCount: number;
-    objects: number;
-    vertices: number;
-    faces: number;
-    drawCalls: number;
-    triangles: number;
-    points: number;
-    lines: number;
-    textures: number;
-    geometries: number;
-    programs: number;
-}
-interface CameraFlyToOptions {
-    position: THREE.Vector3;
-    lookAt?: THREE.Vector3;
+import { THREE, BasePlugin } from '../basePlugin';
+import { PipelineManager } from '../../core/pipelineManager';
+import { FloorConfig, FloorManager } from './floorManager';
+import { BaseControls } from './baseControl';
+interface CameraState {
+    position: THREE.Vector3 | {
+        x: number;
+        y: number;
+        z: number;
+    };
+    lookAt: THREE.Vector3 | {
+        x: number;
+        y: number;
+        z: number;
+    };
+    mode: '2D' | '3D';
+    distance?: number;
+    target?: THREE.Vector3 | {
+        x: number;
+        y: number;
+        z: number;
+    };
+    up?: THREE.Vector3 | {
+        x: number;
+        y: number;
+        z: number;
+    };
+    quaternion?: THREE.Quaternion | object;
+    rotation?: THREE.Euler | object;
+    fov?: number;
+    aspect?: number;
+    near?: number;
+    far?: number;
+    zoom?: number;
+    left?: number;
+    right?: number;
+    top?: number;
+    bottom?: number;
+    controlsEnabled?: boolean;
+    enableZoom?: boolean;
+    enableRotate?: boolean;
+    enablePan?: boolean;
+    minDistance?: number;
+    maxDistance?: number;
+    minPolarAngle?: number;
+    maxPolarAngle?: number;
+    minAzimuthAngle?: number;
+    maxAzimuthAngle?: number;
     duration?: number;
     easing?: (amount: number) => number;
     onUpdate?: () => void;
     onComplete?: () => void;
 }
+interface CameraFlyToOptions {
+    position?: {
+        x: number;
+        y: number;
+        z: number;
+    };
+    lookAt?: {
+        x: number;
+        y: number;
+        z: number;
+    };
+    duration?: number;
+    enableLookAt?: boolean;
+    rotation?: {
+        pitch: number;
+        yaw: number;
+        roll: number;
+    };
+    easing?: (amount: number) => number;
+    onStart?: () => void;
+    onUpdate?: () => void;
+    onComplete?: () => void;
+}
+interface UpdateParams {
+    deltaTime: number;
+    elapsedTime: number;
+}
 export declare class BaseScene extends BasePlugin {
-    private camera;
-    private aspectRatio;
-    private scene;
-    private ambientLight;
-    private renderer;
-    private pipelineManager;
-    private directionalLight;
-    private controls;
-    private cameraConfig;
-    private floorManager;
-    private floorConfig;
-    private performanceMonitor;
-    private rendererAdvancedConfig;
-    private debugConfig;
-    private debugHelpers;
-    private _flyTween;
+    camera: THREE.PerspectiveCamera | THREE.OrthographicCamera;
+    aspectRatio: number;
+    scene: THREE.Scene;
+    renderer: THREE.WebGLRenderer;
+    pipelineManager: PipelineManager;
+    controls: BaseControls | null;
+    cameraConfig: {
+        perspectiveCamera: THREE.PerspectiveCamera;
+        orthographicCamera: THREE.OrthographicCamera;
+        currentMode: '2D' | '3D';
+        switchAnimationDuration: number;
+    };
+    cameraOption: {
+        lookAt: number[];
+        position: number[];
+        type: "perspective" | "orthographic";
+        fov: number;
+        far: number;
+        near: number;
+    };
+    floorManager: FloorManager;
+    floorConfig: FloorConfig;
+    debugConfig: {
+        enabled: boolean;
+        gridHelper: boolean;
+        axesHelper: boolean;
+        gridSize: number;
+        gridDivisions: number;
+        axesSize: number;
+    };
+    debugHelpers: {
+        gridHelper: THREE.GridHelper | null;
+        axesHelper: THREE.AxesHelper | null;
+    };
+    _flyTween: any;
+    orthographicCamera: THREE.OrthographicCamera | null;
+    perspectiveCamera: THREE.PerspectiveCamera | null;
+    lastCameraState: {
+        position: THREE.Vector3;
+        quaternion: THREE.Quaternion;
+    } | null;
     constructor(meta: any);
     /**
      * 初始化控制器系统
@@ -114,72 +129,19 @@ export declare class BaseScene extends BasePlugin {
      * 初始化双相机系统
      */
     private initializeDualCameraSystem;
-    /**
-     * 验证是否为有效的HTMLCanvasElement
-     */
-    private isValidCanvas;
-    /**
-     * 深度合并配置对象（防止循环引用）
-     */
-    private mergeConfigs;
-    /**
-     * 安全的深拷贝方法（防止循环引用）
-     */
-    private safeDeepClone;
-    /**
-     * 应用渲染器高级配置
-     */
-    private applyRendererAdvancedConfig;
-    /**
-     * 获取色调映射名称
-     */
-    private getToneMappingName;
-    /**
-     * 更新性能统计
-     */
-    private updatePerformanceStats;
-    /**
-     * 计算性能统计
-     */
-    private calculatePerformanceStats;
-    /**
-     * 计算场景统计（点线面信息）
-     */
-    private calculateSceneStats;
     initialize(): void;
     /**
      * 更新渲染器尺寸
+     * @param width 窗口宽度
+     * @param height 窗口高度
      */
-    private updateRendererSize;
-    handleResize(): void;
+    updateRendererSize(width?: number, height?: number): void;
     /**
-     * 启用/禁用性能监控
+     * 处理窗口 resize 事件
+     * @param width 窗口宽度
+     * @param height 窗口高度
      */
-    setPerformanceMonitorEnabled(enabled: boolean): void;
-    /**
-     * 获取当前性能统计
-     */
-    getPerformanceStats(): PerformanceStats;
-    /**
-     * 重置性能统计
-     */
-    resetPerformanceStats(): void;
-    /**
-     * 获取渲染器配置信息
-     */
-    getRendererConfig(): any;
-    /**
-     * 更新阴影设置
-     */
-    setShadowEnabled(enabled: boolean): void;
-    /**
-     * 更新色调映射
-     */
-    setToneMapping(toneMapping: THREE.ToneMapping, exposure?: number): void;
-    /**
-     * 获取场景信息
-     */
-    getSceneInfo(): any;
+    handleResize(width?: number, height?: number): void;
     /**
      * 访问器方法
      */
@@ -187,65 +149,8 @@ export declare class BaseScene extends BasePlugin {
     get cameraInstance(): THREE.Camera;
     get rendererInstance(): THREE.WebGLRenderer;
     get controlsInstance(): BaseControls | null;
-    get isPerformanceMonitorEnabled(): boolean;
-    /**
-     * 静态工厂方法 - 创建高性能场景
-     */
-    static createHighPerformance(customConfig?: any): BaseScene;
-    /**
-     * 静态工厂方法 - 创建平衡配置场景（推荐）
-     */
-    static createBalanced(customConfig?: any): BaseScene;
-    /**
-     * 静态工厂方法 - 创建高质量场景
-     */
-    static createHighQuality(customConfig?: any): BaseScene;
-    /**
-     * 静态工厂方法 - 创建开发调试场景
-     */
-    static createDevelopment(customConfig?: any): BaseScene;
-    /**
-     * 静态工厂方法 - 创建最简场景（最少配置）
-     */
-    static createMinimal(): BaseScene;
-    /**
-     * 静态工厂方法 - 创建带Debug模式的场景
-     */
-    static createWithDebug(preset?: string, customConfig?: any): BaseScene;
-    /**
-     * 静态工厂方法 - 创建带自定义地板的场景
-     */
-    static createWithFloor(floorType: FloorConfig['type'], floorSize?: number, customConfig?: any): BaseScene;
-    /**
-     * 静态工厂方法 - 创建带贴图地板的场景
-     * @param floorType 地板类型
-     * @param textureUrl 贴图地址
-     * @param floorSize 地板大小
-     * @param customConfig 自定义配置
-     */
-    static createWithTexturedFloor(floorType: 'static' | 'water', textureUrl: string, floorSize?: number, customConfig?: any): BaseScene;
-    /**
-     * 静态工厂方法 - 创建带PBR贴图地板的场景
-     * @param textures PBR贴图集合
-     * @param floorSize 地板大小
-     * @param customConfig 自定义配置
-     */
-    static createWithPBRFloor(textures: {
-        diffuse?: string;
-        normal?: string;
-        roughness?: string;
-        metallic?: string;
-    }, floorSize?: number, customConfig?: any): BaseScene;
-    /**
-     * 获取所有可用的配置预设
-     */
-    static getAvailablePresets(): string[];
-    /**
-     * 获取指定预设的详细配置
-     */
-    static getPresetConfig(preset: string): any;
     destroy(): void;
-    update(): void;
+    update({ deltaTime, elapsedTime }: UpdateParams): void;
     private addDebugHelpers;
     /**
      * 移除Debug辅助器
@@ -267,6 +172,7 @@ export declare class BaseScene extends BasePlugin {
      * 更新网格辅助器配置
      */
     updateGridConfig(size?: number, divisions?: number): void;
+    setupLight(): void;
     /**
      * 更新坐标轴辅助器配置
      */
@@ -352,9 +258,9 @@ export declare class BaseScene extends BasePlugin {
     /**
      * 视角飞入
      * 平滑动画地将相机移动到目标位置并朝向目标点
-     * @param options 相机飞行配置参数
+     * @param options 相机飞行配置参数或相机状态对象
      */
-    cameraFlyTo(options: CameraFlyToOptions): void;
+    cameraFlyTo(options: CameraFlyToOptions | CameraState): void;
     /**
      * 判断是否应该跳过该对象（天空盒等）
      * @param object 要检查的三维对象
@@ -390,7 +296,107 @@ export declare class BaseScene extends BasePlugin {
      * 使用等轴测视角，确保场景完整可见，注视场景中心点
      */
     autoFitScene(): void;
-    getCameraState(): any;
+    getCameraState(): CameraState;
     setCameraState(state: any): void;
+    /**
+     * 恢复相机状态（带动画）
+     * 这是 cameraFlyTo 的便捷封装，专门用于恢复之前保存的相机状态
+     * @param state 要恢复的相机状态
+     * @param duration 动画时长（可选，默认使用状态中的duration或2000ms）
+     */
+    restoreCameraState(state: CameraState, duration?: number): void;
+    /**
+     * 计算视野匹配的正交相机参数
+     * 根据透视相机的FOV和距离计算正交相机应有的视锥体大小
+     * @param perspectiveCamera 透视相机
+     * @param distance 相机到目标的距离
+     * @returns 正交相机的视锥体参数
+     */
+    private calculateOrthographicFrustum;
+    /**
+     * 切换相机类型
+     * 检查当前相机类型，如果是透视相机则切换为正交相机，反之亦然
+     * 保持相机位置和朝向不变，只改变投影方式
+     */
+    switchCamera(): void;
+    /**
+     * 切换相机模式
+     * @param mode 相机模式：“2D” | “3D”
+     */
+    switchCameraMode(mode?: string | null): Promise<string>;
+    /**
+     * 手动调整正交相机的缩放以匹配当前视野
+     * 用于解决3D到2D切换时视野不匹配的问题
+     * @param targetZoom 目标缩放值，可选，如果不提供则自动计算
+     */
+    adjustOrthographicZoom(targetZoom?: number): void;
+    /**
+     * 获取当前相机的视野信息
+     * @returns 视野信息对象
+     */
+    getCameraViewInfo(): any;
+    /**
+     * 相机沿视线方向前进n个单位
+     * @param distance 距离,默认为10, 负值为后退
+     */
+    moveForward(distance?: number): void;
+    /**
+     * 强制切换到2D模式（俯视正交相机）
+     * @returns Promise<string> 切换结果
+     */
+    switchTo2D(): Promise<string>;
+    /**
+     * 强制切换到3D模式（透视相机）
+     * @returns Promise<string> 切换结果
+     */
+    switchTo3D(): Promise<string>;
+    /**
+     * 自动切换相机模式（3D⇄2D）
+     * @returns Promise<string> 切换结果
+     */
+    toggleCameraMode(): Promise<string>;
+    /**
+     * 获取当前相机模式
+     * @returns "2D" | "3D"
+     */
+    getCameraMode(): '2D' | '3D';
+    /**
+     * 检查当前是否为2D模式
+     * @returns boolean
+     */
+    is2DMode(): boolean;
+    /**
+     * 检查当前是否为3D模式
+     * @returns boolean
+     */
+    is3DMode(): boolean;
+    /**
+     * 获取当前激活的相机对象
+     * @returns THREE.Camera
+     */
+    getCurrentCamera(): THREE.Camera;
+    /**
+     * 获取2D相机的缩放值
+     * @returns number | null 如果不是正交相机则返回null
+     */
+    get2DCameraZoom(): number | null;
+    /**
+     * 设置2D相机的缩放值
+     * @param zoom 缩放值（大于0）
+     * @returns boolean 是否设置成功
+     */
+    set2DCameraZoom(zoom: number): boolean;
+    /**
+     * 应用2D相机缩放增量
+     * @param delta 缩放增量（可正可负）
+     * @returns boolean 是否应用成功
+     */
+    apply2DCameraZoomDelta(delta: number): boolean;
+    /**
+     * 通过包围盒计算物体世界坐标
+     * @param mesh
+     * @returns
+     */
+    getWorldPositionByBoundingBox(mesh: THREE.Group | THREE.Mesh | THREE.Object3D): THREE.Vector3;
 }
 export {};

@@ -13,7 +13,7 @@ export default defineConfig({
       configureServer(server) {
         // 为Service Worker文件提供自定义中间件
         server.middlewares.use('/network-interceptor-sw.js', (req, res, next) => {
-          const swPath = path.resolve(__dirname, '../EngineKernel/dist/public/network-interceptor-sw.js');
+          const swPath = path.resolve(__dirname, './public/engine/public/network-interceptor-sw.js');
 
           if (fs.existsSync(swPath)) {
             res.setHeader('Content-Type', 'application/javascript');
