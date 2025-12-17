@@ -3,6 +3,7 @@ import { GLTFLoader } from "../../utils/three-imports";
 import { TaskPriority, TaskStatus } from "../../tools/asyncTaskScheduler";
 export declare class ResourceReaderPlugin extends BasePlugin {
     gltfLoader: GLTFLoader;
+    mixers: THREE.AnimationMixer[];
     private dracoLoader;
     private ktx2Loader;
     private meshoptDecoder;
@@ -13,7 +14,6 @@ export declare class ResourceReaderPlugin extends BasePlugin {
     private activeLoads;
     private config;
     private baseUrl;
-    private maxCacheSize;
     private maxConcurrentLoads;
     private taskIdCounter;
     private renderer;
@@ -23,6 +23,10 @@ export declare class ResourceReaderPlugin extends BasePlugin {
      * 初始化，默认执行
     */
     initialize(): void;
+    /**
+     * 模型动画更新
+     */
+    update(): void;
     /**
      * 初始化DRACO解压器
      */
@@ -48,9 +52,13 @@ export declare class ResourceReaderPlugin extends BasePlugin {
      */
     private initializeTaskScheduler;
     /**
-     * 初始化Service Worker网络拦截器
+     * Service Worker消息处理器引用（用于移除监听器）
      */
-    private initializeServiceWorker;
+    private serviceWorkerMessageHandler;
+    /**
+     * 插件初始化
+     */
+    init(): Promise<void>;
     /**
      * 基类要求的load方法
      */
@@ -63,6 +71,7 @@ export declare class ResourceReaderPlugin extends BasePlugin {
         retryCount?: number;
         category?: string;
         metadata?: any;
+        forceReload?: boolean;
     }): Promise<THREE.Group | THREE.Scene | THREE.Object3D>;
     /**
      * 批量异步加载模型

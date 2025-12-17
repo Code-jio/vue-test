@@ -95,6 +95,7 @@ export declare class ModelMarker extends BasePlugin {
     private enableDebugMode;
     private defaultConfig;
     private animateGroup;
+    private gltfWorkerManager;
     constructor(meta?: any);
     /**
      * 插件初始化
@@ -125,7 +126,7 @@ export declare class ModelMarker extends BasePlugin {
      */
     private loadModelDirect;
     /**
-     * 加载模型的核心实现
+     * 加载模型的核心实现（使用Web Worker）
      */
     private loadModelDirectWithCallback;
     /**

@@ -108,4 +108,41 @@ declare function objectToVector3(obj: {
     y: number;
     z: number;
 }): THREE.Vector3;
-export { degreesToRadians, radiansToDegrees, clamp, lerp, lerpVector3, distance2D, distance3D, randomColor, deepClone, debounce, throttle, isMobile, formatFileSize, sleep, safeDeepClone, mergeConfigs, setObjectOpacity, restoreOriginalOpacity, ccw, computeConvexHull, extractObjectContour, extractAndSaveObjectBounding, centerContourAtOrigin, objectToVector3, vector3ToObject };
+/**
+ * 将 mesh 的材质克隆并修改颜色，原始材质保存在 mesh.userData.originalMaterial 或 mesh.userData.originalMaterials
+ * @param mesh - 你要修改的 Three.js mesh
+ * @param targetHexColor - 目标颜色（十六进制，例如 0x00ff00）
+ */
+declare function changeMeshColor(mesh: THREE.Mesh, targetHexColor: number): void;
+/**
+ * 从 mesh.userData 恢复原始材质
+ * @param mesh - 你要恢复的 Three.js mesh
+ */
+declare function restoreMeshOriginalMaterial(mesh: THREE.Mesh): void;
+export { degreesToRadians, // 角度转弧度
+radiansToDegrees, // 弧度转角度
+clamp, // 限制数值在指定范围内
+lerp, //线性插值
+lerpVector3, // 向量线性插值
+distance2D, // 计算两点之间的距离
+distance3D, // 计算3D空间中的距离
+randomColor, // 生成随机颜色
+deepClone, // 深度克隆对象（简单对象）
+debounce, // 防抖函数
+throttle, // 节流函数
+isMobile, // 判断是否为移动设备
+formatFileSize, // 格式化文件大小
+sleep, // 等待指定时间
+safeDeepClone, // 安全深度克隆
+mergeConfigs, // 深度合并配置对象（防止循环引用）
+setObjectOpacity, // 设置物体透明度（自动保存原始材质）
+restoreOriginalOpacity, // 恢复物体的原始透明度（使用之前在setObjectOpacity中保存的材质信息）
+ccw, // 判断三点是否构成逆时针转向
+computeConvexHull, // 计算点集的凸包
+extractObjectContour, // 提取3D对象的2D平面轮廓（俯视视角）,专用于房间
+extractAndSaveObjectBounding, // 为对象提取并保存轮廓信息到userData
+centerContourAtOrigin, // 将轮廓的几何中心移动到原点
+objectToVector3, // 对象转向量
+vector3ToObject, // 向量转对象
+changeMeshColor, // 将 mesh 的材质克隆并修改颜色，原始材质保存在 mesh.userData
+restoreMeshOriginalMaterial };

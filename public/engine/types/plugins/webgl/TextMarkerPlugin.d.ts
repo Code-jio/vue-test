@@ -3,7 +3,7 @@ interface TextStyle {
     fontSize: number;
     fontFamily: string;
     fontWeight: "normal" | "bold" | "lighter" | "bolder";
-    color: string;
+    textColor: string;
     textAlign: "left" | "center" | "right";
     lineHeight: number;
     maxWidth?: number;
@@ -45,12 +45,13 @@ interface ImageConfig {
 }
 interface TextMarkerConfig {
     text: string;
-    position: Array<number> | THREE.Vector3 | {
+    position?: Array<number> | THREE.Vector3 | {
         x: number;
         y: number;
         z: number;
     };
     textStyle?: Partial<TextStyle>;
+    offset?: [];
     backgroundStyle?: Partial<BackgroundStyle>;
     image?: ImageConfig;
     scale?: number;
@@ -185,6 +186,16 @@ export declare class TextMarkerPlugin extends BasePlugin {
      * 更新标记配置
      */
     updateMarker(markerId: string, config: Partial<TextMarkerConfig>): boolean;
+    /**
+     * 设置位置
+     * @param sprite
+     * @param position
+     */
+    setPosition(sprite: THREE.Sprite, position: number[] | THREE.Vector3 | {
+        x?: number;
+        y?: number;
+        z?: number;
+    } | null | undefined): void;
     /**
      * 移除标记
      */
